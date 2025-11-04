@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface CouponRepository {
     List<Coupon> findAll();
     Optional<Coupon> findById(long couponId);
+    Coupon save(Coupon coupon);
 }

@@ -24,6 +24,11 @@ public class CouponRepositoryImpl implements CouponRepository {
     public Optional<Coupon> findById(long couponId) {
         return Optional.of(couponTable.selectById(couponId));
     }
+
+    @Override
+    public Coupon save(Coupon coupon) {
+        return couponTable.save(coupon);
+    }
 }
 
 

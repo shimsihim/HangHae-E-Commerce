@@ -2,11 +2,8 @@ package io.hhplus.tdd.domain.coupon.database;
 
 
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
-import io.hhplus.tdd.domain.point.domain.model.PointHistory;
-import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +37,12 @@ public class CouponTable {
 
     public List<Coupon> selectAll() {
         return table.values().stream().toList();
+    }
+
+    public Coupon save(Coupon coupon) {
+        throttle(300L);
+        table.put(coupon.getId(), coupon);
+        return coupon;
     }
 
     private void throttle(long millis) {

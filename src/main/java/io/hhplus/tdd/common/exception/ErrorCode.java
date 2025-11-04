@@ -14,7 +14,8 @@ public enum ErrorCode {
     USER_POINT_OVERFLOW(HttpStatus.BAD_REQUEST, "U0004" , "충전 후 금액이 최대값을 초과 합니다. 유저 아이디 : %d ,현재 금액 : %d , 충전(사용) 금액 : %d"),
     USER_POINT_MAX_EXCEEDED(HttpStatus.BAD_REQUEST, "U0005" , "보유 가능한 최대 포인트(1,000,000,000)를 초과합니다. 유저 아이디 : %d , 현재 금액 : %d , 충전 금액 : %d"),
     USER_POINT_CHARGE_MIN_AMOUNT(HttpStatus.BAD_REQUEST, "U0006" , "충전 최소 금액은 1,000원입니다. 유저 아이디 : %d , 충전 금액 : %d"),
-    USER_POINT_USE_MIN_AMOUNT(HttpStatus.BAD_REQUEST, "U0007" , "사용 최소 금액은 100원입니다. 유저 아이디 : %d , 사용 금액 : %d"),
+    USER_POINT_CHARGE_MAX_AMOUNT(HttpStatus.BAD_REQUEST, "U0007" , "1회 충전 금액은 500,000원을 초과할 수 없습니다. 유저 아이디 : %d , 충전 금액 : %d"),
+    USER_POINT_USE_MIN_AMOUNT(HttpStatus.BAD_REQUEST, "U0008" , "사용 최소 금액은 100원입니다. 유저 아이디 : %d , 사용 금액 : %d"),
 
     LOCK_KEY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR , "L0001" , "%d 에 해당하는 Lock의 키가 존재하지 않습니다."),
     LOCK_GET_FAIL(HttpStatus.INTERNAL_SERVER_ERROR , "L0002" , "ID : %d 의 락을 얻지 못했습니다."),

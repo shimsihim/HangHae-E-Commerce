@@ -2,6 +2,9 @@ package io.hhplus.tdd.domain.point.application;
 
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.common.exception.UserNotFoundException;
+import io.hhplus.tdd.common.lock.LockAnn;
+import io.hhplus.tdd.common.lock.LockId;
+import io.hhplus.tdd.common.lock.LockKey;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import io.hhplus.tdd.domain.point.domain.repository.PointHistoryRepository;
@@ -17,7 +20,7 @@ public class PointUseHandler {
     private final UserPointRepository userPointRepository;
 
     public record Input(
-            long userId,
+            @LockId long userId,
             long amount,
             String description
     ){}
@@ -33,6 +36,7 @@ public class PointUseHandler {
     }
 
 //    @Transactional
+    @LockAnn(lockKey = LockKey.USER)
     public Output handle(Input input){
         UserPoint up = userPointRepository.findByUserId(input.userId()).orElseThrow(()-> new UserNotFoundException(ErrorCode.USER_NOT_FOUND , input.userId()));
         up.usePoint(input.amount());

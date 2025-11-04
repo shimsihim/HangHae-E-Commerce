@@ -3,6 +3,7 @@ package io.hhplus.tdd.domain.coupon.presentation;
 import io.hhplus.tdd.domain.coupon.application.GetAllCouponListQuery;
 import io.hhplus.tdd.domain.coupon.application.GetUserCouponListQuery;
 import io.hhplus.tdd.domain.coupon.application.IssueUserCouponUseCase;
+import io.hhplus.tdd.domain.coupon.application.RollBackUseUserCouponUseCase;
 import io.hhplus.tdd.domain.coupon.application.UseUserCouponUseCase;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
 import io.hhplus.tdd.domain.coupon.presentation.dto.req.CouponIssueReqDTO;
@@ -30,6 +31,7 @@ public class CouponController {
     private final GetAllCouponListQuery getAllCouponListQuery;
     private final IssueUserCouponUseCase issueUserCouponUseCase;
     private final UseUserCouponUseCase useUserCouponUseCase;
+    private final RollBackUseUserCouponUseCase rollBackUseUserCouponUseCase;
 
     @GetMapping()
     public List<CouponResDTO> getAllCouponList(){
@@ -49,7 +51,9 @@ public class CouponController {
 
     @PostMapping("/issue")
     public void issueUserCoupopn(@RequestBody @Validated CouponIssueReqDTO couponIssueReqDTO){
-        issueUserCouponUseCase.handle(new IssueUserCouponUseCase.Input(couponIssueReqDTO.userId() , couponIssueReqDTO.couponId()));
+        issueUserCouponUseCase.handle(
+                new IssueUserCouponUseCase.Input(couponIssueReqDTO.couponId(), couponIssueReqDTO.userId())
+        );
     }
 
     @PostMapping("/use")
@@ -59,6 +63,6 @@ public class CouponController {
 
     @PostMapping("/use/rollback")
     public void rollbackUseUserCoupon(@RequestBody @Validated CouponUseReqDTO couponUseReqDTO){
-        useUserCouponUseCase.handle(new UseUserCouponUseCase.Input(couponUseReqDTO.userId(),couponUseReqDTO.userCouponId()));
+        rollBackUseUserCouponUseCase.handle(new RollBackUseUserCouponUseCase.Input(couponUseReqDTO.userId(),couponUseReqDTO.userCouponId()));
     }
 }

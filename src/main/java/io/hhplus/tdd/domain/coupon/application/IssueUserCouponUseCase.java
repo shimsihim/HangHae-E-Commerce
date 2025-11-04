@@ -1,6 +1,9 @@
 package io.hhplus.tdd.domain.coupon.application;
 
 import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.common.lock.LockAnn;
+import io.hhplus.tdd.common.lock.LockId;
+import io.hhplus.tdd.common.lock.LockKey;
 import io.hhplus.tdd.domain.coupon.domain.CouponValidator;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
@@ -21,11 +24,11 @@ public class IssueUserCouponUseCase {
     private final CouponValidator couponValidator;
 
     public record Input(
-            long userId,
-            long couponId
+            @LockId long couponId,
+            long userId
     ){}
 
-
+    @LockAnn(lockKey = LockKey.COUPON)
     public void handle(Input input){
         Coupon coupon = couponRepository.findById(input.couponId()).orElseThrow(()-> new CouponException(ErrorCode.COUPON_NOT_FOUND , input.couponId()));
 
@@ -35,6 +38,11 @@ public class IssueUserCouponUseCase {
         if(userCouponList.size() >= coupon.getLimitPerUser()){
             throw new CouponException(ErrorCode.COUPON_ISSUE_LIMIT_PER_USER , input.couponId());
         }
+
+        // 쿠폰 발급 수량 증가 (동시성 제어 필요)
+        coupon.increaseIssuedQuantity();
+        couponRepository.save(coupon);
+
         UserCoupon userCoupon = UserCoupon.from(input.userId() , coupon);
         userCoupon = userCouponRepository.save(userCoupon);
     }

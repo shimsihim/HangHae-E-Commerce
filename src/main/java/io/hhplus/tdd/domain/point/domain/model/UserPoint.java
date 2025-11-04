@@ -19,6 +19,7 @@ public class UserPoint {
 
     private static final long MAX_POINT = 1_000_000_000L;
     private static final long MIN_CHARGE_AMOUNT = 1_000L;
+    private static final long MAX_CHARGE_AMOUNT = 500_000L;
     private static final long MIN_USE_AMOUNT = 100L;
 
 
@@ -27,6 +28,8 @@ public class UserPoint {
         if(chargePoint < 0) throw new PointRangeException(ErrorCode.USER_POINT_MUST_POSITIVE , this.id , chargePoint);
 
         if(chargePoint < MIN_CHARGE_AMOUNT) throw new PointRangeException(ErrorCode.USER_POINT_CHARGE_MIN_AMOUNT , this.id , chargePoint);
+
+        if(chargePoint > MAX_CHARGE_AMOUNT) throw new PointRangeException(ErrorCode.USER_POINT_CHARGE_MAX_AMOUNT , this.id , chargePoint);
 
         long newPoint;
         try{
