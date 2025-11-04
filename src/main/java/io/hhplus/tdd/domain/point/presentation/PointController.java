@@ -3,8 +3,8 @@ package io.hhplus.tdd.domain.point.presentation;
 
 import io.hhplus.tdd.domain.point.application.GetPointHistoryListQuery;
 import io.hhplus.tdd.domain.point.application.GetUserPointQuery;
-import io.hhplus.tdd.domain.point.application.PointChargeHandler;
-import io.hhplus.tdd.domain.point.application.PointUseHandler;
+import io.hhplus.tdd.domain.point.application.PointChargeUseCase;
+import io.hhplus.tdd.domain.point.application.PointUseUseCase;
 import io.hhplus.tdd.domain.point.presentation.dto.req.UserPointChargeReqDTO;
 import io.hhplus.tdd.domain.point.presentation.dto.req.UserPointUseReqDTO;
 import io.hhplus.tdd.domain.point.presentation.dto.res.PointHistoryResDTO;
@@ -26,34 +26,34 @@ public class PointController {
 
     private final GetPointHistoryListQuery getPointHistoryListQuery;
     private final GetUserPointQuery getUserPointQuery;
-    private final PointChargeHandler pointChargeHandler;
-    private final PointUseHandler pointUseHandler;
+    private final PointChargeUseCase pointChargeUseCase;
+    private final PointUseUseCase pointUseUseCase;
 
     @GetMapping("/balance/{userId}")
     public PointResDTO getBalance(@PathVariable Long userId){
-        GetUserPointQuery.Output output = getUserPointQuery.handle(new GetUserPointQuery.Input(userId));
+        GetUserPointQuery.Output output = getUserPointQuery.execute(new GetUserPointQuery.Input(userId));
         return PointResDTO.of(output.balance());
     }
 
     @GetMapping("/{userId}")
     public List<PointHistoryResDTO> getPointHistory(@PathVariable Long userId){
-        return getPointHistoryListQuery.handle(new GetPointHistoryListQuery.Input(userId)).stream()
+        return getPointHistoryListQuery.execute(new GetPointHistoryListQuery.Input(userId)).stream()
                 .map(output -> PointHistoryResDTO.of(output.id(), output.type(), output.amount(), output.balanceAfter(), output.description()))
                 .collect(Collectors.toUnmodifiableList());
     }
 
     @PostMapping("/charge")
     public PointResDTO chargeBalance(@RequestBody @Validated UserPointChargeReqDTO chargeReq){
-        PointChargeHandler.Output output = pointChargeHandler.handle(
-                new PointChargeHandler.Input(chargeReq.userId(), chargeReq.amount(), chargeReq.description())
+        PointChargeUseCase.Output output = pointChargeUseCase.execute(
+                new PointChargeUseCase.Input(chargeReq.userId(), chargeReq.amount(), chargeReq.description())
         );
         return PointResDTO.of(output.balance());
     }
 
     @PostMapping("/use")
     public PointResDTO useBalance(@RequestBody @Validated UserPointUseReqDTO useReq){
-        PointUseHandler.Output output = pointUseHandler.handle(
-                new PointUseHandler.Input(useReq.userId(), useReq.amount(), useReq.description())
+        PointUseUseCase.Output output = pointUseUseCase.execute(
+                new PointUseUseCase.Input(useReq.userId(), useReq.amount(), useReq.description())
         );
         return PointResDTO.of(output.balance());
     }

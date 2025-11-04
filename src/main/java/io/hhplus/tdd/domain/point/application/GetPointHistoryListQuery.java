@@ -38,7 +38,7 @@ public class GetPointHistoryListQuery {
     }
 
 //    @Transactional(readOnly = true)
-    public List<Output> handle(Input input){
+    public List<Output> execute(Input input){
             return pointHistoryRepository.findByUserId(input.userId())
                     .stream()
                     .map(Output::from)

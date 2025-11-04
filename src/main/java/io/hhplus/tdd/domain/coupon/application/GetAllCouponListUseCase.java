@@ -1,9 +1,7 @@
 package io.hhplus.tdd.domain.coupon.application;
 
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
-import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import io.hhplus.tdd.domain.coupon.domain.repository.CouponRepository;
-import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +10,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class GetAllCouponListQuery {
+public class GetAllCouponListUseCase {
 
     private final CouponRepository couponRepository;
 
@@ -47,7 +45,7 @@ public class GetAllCouponListQuery {
     }
 
 //    @Transactional(readOnly = true)
-    public List<Output> handle(){
+    public List<Output> execute(){
             return couponRepository.findAll()
                     .stream()
                     .map(Output::from)

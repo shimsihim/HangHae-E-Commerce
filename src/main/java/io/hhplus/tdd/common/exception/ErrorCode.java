@@ -25,7 +25,9 @@ public enum ErrorCode {
     COUPON_DURATION_ERR(HttpStatus.BAD_REQUEST, "C0002" , "쿠폰의 기한이 유효하지 않습니다. 쿠폰 아이디 : %d"),
     COUPON_ISSUE_LIMIT_PER_USER(HttpStatus.BAD_REQUEST, "C0003" , "유저 당 발급 가능한 쿠폰의 개수를 초과했습니다. 쿠폰 아이디 : %d"),
     COUPON_ISSUE_LIMIT(HttpStatus.BAD_REQUEST, "C0004" , "쿠폰을 더이상 발급할 수 없습니다. 쿠폰 아이디 : %d"),
-    COUPON_USER_EXPIRED(HttpStatus.BAD_REQUEST, "C0005" , "사용자 쿠폰이 만료되었습니다. 사용자 쿠폰 아이디 : %d");
+    COUPON_USER_EXPIRED(HttpStatus.BAD_REQUEST, "C0005" , "사용자 쿠폰이 만료되었습니다. 사용자 쿠폰 아이디 : %d"),
+    COUPON_USER_USED(HttpStatus.BAD_REQUEST, "C0006" , "사용자 쿠폰이 만료되었습니다. 사용자 쿠폰 아이디 : %d"),
+    COUPON_MIN_ORDER_VALUE_ERR(HttpStatus.BAD_REQUEST, "C0007" , "최소 주문 금액을 충족하지 않습니다. 쿠폰 아이디 : %d");
 
     private HttpStatus status;
     private String errMsg;

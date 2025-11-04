@@ -1,5 +1,7 @@
 package io.hhplus.tdd.domain.coupon.domain.model;
 
+import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.domain.coupon.exception.CouponException;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -43,11 +45,19 @@ public class Coupon {
         }
 
         if(this.discountType == DiscountType.PERCENTAGE) {
-            // 퍼센트 할인: 주문금액 * (할인율 / 100)
             return (orderAmount * this.discountValue) / 100;
         } else {
-            // 고정 금액 할인
             return this.discountValue;
+        }
+    }
+
+    public void validIssue(){
+        LocalDateTime now = LocalDateTime.now();
+        if(now.isBefore(this.getValidFrom()) || now.isAfter(this.getValidUntil())){
+            throw new CouponException(ErrorCode.COUPON_DURATION_ERR , this.getId());
+        }
+        if(this.getIssuedQuantity() >= this.getTotalQuantity()){
+            throw new CouponException(ErrorCode.COUPON_ISSUE_LIMIT , this.getId());
         }
     }
 }

@@ -1,6 +1,6 @@
 package io.hhplus.tdd.domain.coupon.presentation.dto.res;//package io.hhplus.tdd.domain.cart.presentation.dto.res;
 
-import io.hhplus.tdd.domain.coupon.application.GetUserCouponListQuery;
+import io.hhplus.tdd.domain.coupon.application.GetUserCouponListUseCase;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -18,7 +18,7 @@ public record UserCouponResDTO(
     LocalDateTime usedAt,
     LocalDateTime expiredAt
 ) {
-    public static UserCouponResDTO from(GetUserCouponListQuery.Output out){
+    public static UserCouponResDTO from(GetUserCouponListUseCase.Output out){
         return UserCouponResDTO.builder()
                 .id(out.id())
                 .couponId(out.couponId())

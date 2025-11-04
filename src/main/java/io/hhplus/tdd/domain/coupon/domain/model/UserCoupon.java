@@ -1,5 +1,7 @@
 package io.hhplus.tdd.domain.coupon.domain.model;
 
+import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.domain.coupon.exception.CouponException;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -27,6 +29,12 @@ public class UserCoupon {
     }
 
     public void useCoupon(){
+        if (LocalDateTime.now().isAfter(this.getExpiredAt()) || this.status.equals(Status.EXPIRED)) {
+            throw new CouponException(ErrorCode.COUPON_USER_EXPIRED, this.getId());
+        }
+        if (this.status.equals(Status.USED)) {
+            throw new CouponException(ErrorCode.COUPON_USER_USED, this.getId());
+        }
         this.status = Status.USED;
     }
 

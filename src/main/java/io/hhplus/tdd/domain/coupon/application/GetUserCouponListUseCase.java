@@ -12,7 +12,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class GetUserCouponListQuery {
+public class GetUserCouponListUseCase {
 
     private final UserCouponRepository userCouponRepository;
     private final CouponRepository couponRepository;
@@ -53,14 +53,14 @@ public class GetUserCouponListQuery {
     }
 
 //    @Transactional(readOnly = true)
-    public List<Output> handle(Input input){
-            List<UserCoupon> userCouponList =  userCouponRepository.findByUserId(input.userId())
-                    .stream()
-                    .toList();
-            return userCouponList.stream().map(userCoupon -> { //인메모리긴 하지만 N+1 발생
-                Coupon coupon = couponRepository.findById(userCoupon.getCouponId()).orElseThrow(()->new IllegalArgumentException(""));
-                return Output.from(userCoupon , coupon);
-            }).toList();
+    public List<Output> execute(Input input){
+        List<UserCoupon> userCouponList =  userCouponRepository.findByUserId(input.userId())
+                .stream()
+                .toList();
+        return userCouponList.stream().map(userCoupon -> { //인메모리긴 하지만 N+1 발생
+            Coupon coupon = couponRepository.findById(userCoupon.getCouponId()).orElseThrow(()->new IllegalArgumentException(""));
+            return Output.from(userCoupon , coupon);
+        }).toList();
     }
 
 

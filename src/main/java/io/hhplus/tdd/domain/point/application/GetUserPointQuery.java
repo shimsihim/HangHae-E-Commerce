@@ -26,7 +26,7 @@ public class GetUserPointQuery {
         }
     }
 
-    public Output handle(Input input){
+    public Output execute(Input input){
         UserPoint userPoint = userPointRepository.findByUserId(input.userId())
                 .orElseThrow(()-> new UserNotFoundException(ErrorCode.USER_NOT_FOUND , input.userId()));
         return Output.from(userPoint);
