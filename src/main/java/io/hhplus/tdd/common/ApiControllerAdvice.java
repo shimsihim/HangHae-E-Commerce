@@ -2,12 +2,7 @@ package io.hhplus.tdd.common;
 
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.common.response.ApiResponse;
-import io.hhplus.tdd.user.exception.PointRangeException;
-import io.hhplus.tdd.user.exception.UserNotFoundException;
-import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;

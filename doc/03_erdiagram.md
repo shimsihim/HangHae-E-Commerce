@@ -16,6 +16,7 @@ erDiagram
     users ||--o{ orders : "생성"
     users ||--o{ user_coupons : "소유"
     users ||--o{ point_history : "소유"
+    users ||--o{ user_point : "소유"
     coupons ||--o{ user_coupons : "발급"
     products ||--o{ product_options : "하위"
     product_options ||--o{ cart : "추가"
@@ -36,6 +37,12 @@ erDiagram
         datetime created_at
         datetime updated_at
         datetime deleted_at
+        bigint version "낙관적 락 적용"
+    }
+
+    user_point {
+        bigint user_id PK
+        bigint balance "현재 포인트 잔액"
         bigint version "낙관적 락 적용"
     }
 

@@ -1,8 +1,7 @@
 package io.hhplus.tdd.common.aop;
 
-import io.hhplus.tdd.user.database.UserTable;
-import io.hhplus.tdd.user.domain.User;
-import io.hhplus.tdd.user.service.UserService;
+import io.hhplus.tdd.domain.user.domain.User;
+import io.hhplus.tdd.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
