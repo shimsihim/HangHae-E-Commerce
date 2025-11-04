@@ -11,4 +11,9 @@ public record UserPointChargeReqDTO(
         @NotBlank(message = "설명은 필수입니다.")
         String description
 ) {
+    public UserPointChargeReqDTO {
+        if (description == null) {
+            description = "";
+        }
+    }
 }

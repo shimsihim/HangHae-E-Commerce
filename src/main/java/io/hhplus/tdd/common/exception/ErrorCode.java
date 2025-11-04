@@ -17,8 +17,14 @@ public enum ErrorCode {
     USER_POINT_USE_MIN_AMOUNT(HttpStatus.BAD_REQUEST, "U0007" , "사용 최소 금액은 100원입니다. 유저 아이디 : %d , 사용 금액 : %d"),
 
     LOCK_KEY_NOT_FOUND(HttpStatus.INTERNAL_SERVER_ERROR , "L0001" , "%d 에 해당하는 Lock의 키가 존재하지 않습니다."),
-    LOCK_GET_FAIL(HttpStatus.INTERNAL_SERVER_ERROR , "L0002" , "ID : %d 의 락을 얻지 못했습니다.");
+    LOCK_GET_FAIL(HttpStatus.INTERNAL_SERVER_ERROR , "L0002" , "ID : %d 의 락을 얻지 못했습니다."),
 
+
+    COUPON_NOT_FOUND(HttpStatus.NOT_FOUND, "C0001" , "쿠폰을 찾을 수 없습니다. 쿠폰 아이디 : %d"),
+    COUPON_DURATION_ERR(HttpStatus.BAD_REQUEST, "C0002" , "쿠폰의 기한이 유효하지 않습니다. 쿠폰 아이디 : %d"),
+    COUPON_ISSUE_LIMIT_PER_USER(HttpStatus.BAD_REQUEST, "C0003" , "유저 당 발급 가능한 쿠폰의 개수를 초과했습니다. 쿠폰 아이디 : %d"),
+    COUPON_ISSUE_LIMIT(HttpStatus.BAD_REQUEST, "C0004" , "쿠폰을 더이상 발급할 수 없습니다. 쿠폰 아이디 : %d"),
+    COUPON_USER_EXPIRED(HttpStatus.BAD_REQUEST, "C0005" , "사용자 쿠폰이 만료되었습니다. 사용자 쿠폰 아이디 : %d");
 
     private HttpStatus status;
     private String errMsg;

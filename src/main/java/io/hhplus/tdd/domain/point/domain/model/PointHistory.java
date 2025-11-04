@@ -4,17 +4,19 @@ import io.hhplus.tdd.common.BaseEntity;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PointHistory extends BaseEntity {
+public class PointHistory {
 
-    private long id;
-    private long userId;
+    private Long id;
+    private Long userId;
     private TransactionType type;
-    private long amount;
-    private long balanceAfter;
+    private Long amount;
+    private Long balanceAfter;
     private String description;
 
     public static PointHistory createForUse(long userId , long amount , long balanceAfter , String description){
