@@ -1,7 +1,7 @@
 package io.hhplus.tdd.domain.point.presentation;
 
 
-import io.hhplus.tdd.domain.point.application.GetPointHistoryListHandler;
+import io.hhplus.tdd.domain.point.application.GetPointHistoryListQuery;
 import io.hhplus.tdd.domain.point.application.PointChargeHandler;
 import io.hhplus.tdd.domain.point.application.PointUseHandler;
 import io.hhplus.tdd.domain.point.presentation.dto.req.UserPointChargeReqDTO;
@@ -23,14 +23,14 @@ import java.util.stream.Collectors;
 @Validated
 public class PointController {
 
-    private final GetPointHistoryListHandler getPointHistoryListHandler;
+    private final GetPointHistoryListQuery getPointHistoryListQuery;
     private final PointChargeHandler pointChargeHandler;
     private final PointUseHandler pointUseHandler;
 
 
     @GetMapping("/{userId}")
     public List<PointHistoryResDTO> getPointHistory(@PathVariable Long userId){
-        return getPointHistoryListHandler.handle(new GetPointHistoryListHandler.Input(userId)).stream()
+        return getPointHistoryListQuery.handle(new GetPointHistoryListQuery.Input(userId)).stream()
                 .map(output -> PointHistoryResDTO.of(output.id(), output.type(), output.amount(), output.balanceAfter(), output.description()))
                 .collect(Collectors.toUnmodifiableList());
     }

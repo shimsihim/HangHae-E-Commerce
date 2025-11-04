@@ -22,15 +22,6 @@ public class UserPointRepositoryImpl implements UserPointRepository {
 
     @Override
     public UserPoint save(UserPoint userPoint) {
-        if (userPoint.getId() == null) {
-            throw new IllegalArgumentException("UserPoint id cannot be null");
-        }
-
-        UserPoint existingPoint = userPointTable.selectById(userPoint.getId());
-        if (existingPoint == null) {
-            return userPointTable.insertOrUpdate(userPoint.getId(), userPoint.getBalance());
-        }
-
-        return userPointTable.update(userPoint);
+        return userPointTable.insertOrUpdate(userPoint.getId(), userPoint.getBalance());
     }
 }

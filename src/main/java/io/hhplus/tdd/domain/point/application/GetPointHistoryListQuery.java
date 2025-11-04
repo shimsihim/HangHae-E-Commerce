@@ -9,7 +9,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class GetPointHistoryListHandler {
+public class GetPointHistoryListQuery {
 
     private final PointHistoryRepository pointHistoryRepository;
 

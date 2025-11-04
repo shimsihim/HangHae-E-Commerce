@@ -1,5 +1,7 @@
 package io.hhplus.tdd.domain.point.application;
 
+import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.common.exception.UserNotFoundException;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import io.hhplus.tdd.domain.point.domain.repository.PointHistoryRepository;
@@ -32,7 +34,7 @@ public class PointUseHandler {
 
 //    @Transactional
     public Output handle(Input input){
-        UserPoint up = userPointRepository.findByUserId(input.userId()).get();
+        UserPoint up = userPointRepository.findByUserId(input.userId()).orElseThrow(()-> new UserNotFoundException(ErrorCode.USER_NOT_FOUND , input.userId()));
         up.usePoint(input.amount());
         UserPoint afterSave = userPointRepository.save(up);
         PointHistory ph = PointHistory.createForUse(input.userId(), input.amount(), afterSave.getBalance(), input.description());
