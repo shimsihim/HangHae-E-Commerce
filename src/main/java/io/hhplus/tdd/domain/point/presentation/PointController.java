@@ -31,18 +31,20 @@ public class PointController {
     @GetMapping("/{userId}")
     public List<PointHistoryResDTO> getPointHistory(@PathVariable Long userId){
         return getPointHistoryListHandler.handle(new GetPointHistoryListHandler.Input(userId)).stream()
-                .map(PointHistoryResDTO::of)
+                .map(output -> PointHistoryResDTO.of(output.id(), output.type(), output.amount(), output.balanceAfter(), output.description()))
                 .collect(Collectors.toUnmodifiableList());
     }
 
     @PostMapping("/charge")
-    public PointResDTO chargeBalance(@RequestBody UserPointChargeReqDTO chargeReq){
-        return PointResDTO.of(pointChargeHandler.handle(new PointChargeHandler.Input(chargeReq.userId(),chargeReq.amount(),chargeReq.description())));
+    public PointResDTO chargeBalance(@RequestBody @Validated UserPointChargeReqDTO chargeReq){
+        PointChargeHandler.Output output = pointChargeHandler.handle(new PointChargeHandler.Input(chargeReq.userId(), chargeReq.amount(), chargeReq.description()));
+        return PointResDTO.of(output.balance());
     }
 
     @PostMapping("/use")
-    public PointResDTO useBalance(@RequestBody UserPointUseReqDTO useReq){
-        return PointResDTO.of(pointUseHandler.handle(new PointUseHandler.Input(useReq.userId(),useReq.amount(),useReq.description())));
+    public PointResDTO useBalance(@RequestBody @Validated UserPointUseReqDTO useReq){
+        PointUseHandler.Output output = pointUseHandler.handle(new PointUseHandler.Input(useReq.userId(), useReq.amount(), useReq.description()));
+        return PointResDTO.of(output.balance());
     }
 
 

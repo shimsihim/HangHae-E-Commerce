@@ -15,13 +15,34 @@ public class GetPointHistoryListHandler {
 
     public record Input(
             long userId
-    ){
+    ){}
 
+    public record Output(
+            long id,
+            long userId,
+            String type,
+            long amount,
+            long balanceAfter,
+            String description
+    ){
+        public static Output from(PointHistory pointHistory){
+            return new Output(
+                    pointHistory.getId(),
+                    pointHistory.getUserId(),
+                    pointHistory.getType().name(),
+                    pointHistory.getAmount(),
+                    pointHistory.getBalanceAfter(),
+                    pointHistory.getDescription()
+            );
+        }
     }
 
-
-    public List<PointHistory> handle(Input input){
-            return pointHistoryRepository.findByUserId(input.userId());
+//    @Transactional(readOnly = true)
+    public List<Output> handle(Input input){
+            return pointHistoryRepository.findByUserId(input.userId())
+                    .stream()
+                    .map(Output::from)
+                    .toList();
     }
 
 

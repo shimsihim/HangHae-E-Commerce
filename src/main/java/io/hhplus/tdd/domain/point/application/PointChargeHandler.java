@@ -20,12 +20,23 @@ public class PointChargeHandler {
             String description
     ){}
 
-    public UserPoint handle(Input input){
-        UserPoint up = userPointRepository.findByUserId(input.userId());
+    public record Output(
+            long userId,
+            long balance,
+            long version
+    ){
+        public static Output from(UserPoint userPoint){
+            return new Output(userPoint.getId(), userPoint.getBalance(), userPoint.getVersion());
+        }
+    }
+
+//    @Transactional
+    public Output handle(Input input){
+        UserPoint up = userPointRepository.findByUserId(input.userId()).get();
         up.chargePoint(input.amount());
         UserPoint afterSave = userPointRepository.save(up);
-        PointHistory ph = PointHistory.getChargePointHistory(input.userId,input.amount() , afterSave.getBalance(),input.description());
+        PointHistory ph = PointHistory.createForCharge(input.userId(), input.amount(), afterSave.getBalance(), input.description());
         pointHistoryRepository.save(ph);
-        return afterSave;
+        return Output.from(afterSave);
     }
 }

@@ -17,7 +17,7 @@ public class PointHistory extends BaseEntity {
     private long balanceAfter;
     private String description;
 
-    public static PointHistory getUsePointHistory(long userId , long amount , long balanceAfter , String description){
+    public static PointHistory createForUse(long userId , long amount , long balanceAfter , String description){
         return PointHistory.builder().userId(userId)
                 .amount(amount)
                 .balanceAfter(balanceAfter)
@@ -26,7 +26,7 @@ public class PointHistory extends BaseEntity {
                 .build();
     }
 
-    public static PointHistory getChargePointHistory(long userId , long amount , long balanceAfter , String description){
+    public static PointHistory createForCharge(long userId , long amount , long balanceAfter , String description){
         return PointHistory.builder().userId(userId)
                 .amount(amount)
                 .balanceAfter(balanceAfter)
