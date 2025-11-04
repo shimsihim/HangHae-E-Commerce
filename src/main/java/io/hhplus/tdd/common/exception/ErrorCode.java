@@ -27,7 +27,11 @@ public enum ErrorCode {
     COUPON_ISSUE_LIMIT(HttpStatus.BAD_REQUEST, "C0004" , "쿠폰을 더이상 발급할 수 없습니다. 쿠폰 아이디 : %d"),
     COUPON_USER_EXPIRED(HttpStatus.BAD_REQUEST, "C0005" , "사용자 쿠폰이 만료되었습니다. 사용자 쿠폰 아이디 : %d"),
     COUPON_USER_USED(HttpStatus.BAD_REQUEST, "C0006" , "사용자 쿠폰이 만료되었습니다. 사용자 쿠폰 아이디 : %d"),
-    COUPON_MIN_ORDER_VALUE_ERR(HttpStatus.BAD_REQUEST, "C0007" , "최소 주문 금액을 충족하지 않습니다. 쿠폰 아이디 : %d");
+    COUPON_MIN_ORDER_VALUE_ERR(HttpStatus.BAD_REQUEST, "C0007" , "최소 주문 금액을 충족하지 않습니다. 쿠폰 아이디 : %d"),
+
+
+    PRODUCT_NOT_ENOUGH(HttpStatus.BAD_REQUEST, "PR0001" , "제품의 재고가 충분하지 않습니다. 상품id : %d  , 상품옵션 id : %d"),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PR0002" , "제품을 찾을 수 없습니다.. 상품id : %d ");
 
     private HttpStatus status;
     private String errMsg;

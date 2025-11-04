@@ -61,7 +61,6 @@ erDiagram
         varchar name "제품명"
         text description "설명"
         bigint base_price "기본 가격"
-        varchar image_url
         datetime created_at
         datetime updated_at
     }
@@ -341,7 +340,6 @@ CREATE TABLE products (
     name VARCHAR(200) NOT NULL COMMENT '제품명',
     description TEXT COMMENT '설명',
     base_price BIGINT NOT NULL COMMENT '기본 가격',
-    image_url VARCHAR(500),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (product_id)
