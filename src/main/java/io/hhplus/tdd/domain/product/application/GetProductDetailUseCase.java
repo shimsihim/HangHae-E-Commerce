@@ -28,7 +28,16 @@ public class GetProductDetailUseCase {
             String optionName,
             Long price,
             Long quantity
-    ){}
+    ){
+        public static OptionOutput from(ProductOption productOption){
+            return new OptionOutput(
+                    productOption.getId(),
+                    productOption.getOptionName(),
+                    productOption.getPrice(),
+                    productOption.getQuantity()
+            );
+        }
+    }
 
     public record Output(
             Long id,
@@ -64,6 +73,7 @@ public class GetProductDetailUseCase {
             throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND , productId);
         }
 
+        return Output.from(product,optionList);
     }
 
 
