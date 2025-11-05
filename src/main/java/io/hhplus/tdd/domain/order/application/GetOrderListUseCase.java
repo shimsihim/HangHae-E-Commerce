@@ -47,6 +47,7 @@ public class GetOrderListUseCase {
             Long totalAmount,
             Long discountAmount,
             Long usePointAmount,
+            Long finalAmount,
             LocalDateTime createdAt,
             LocalDateTime paidAt,
             List<OrderItemInfo> orderItems
@@ -61,6 +62,7 @@ public class GetOrderListUseCase {
                     .totalAmount(order.getTotalAmount())
                     .discountAmount(order.getDiscountAmount())
                     .usePointAmount(order.getUsePointAmount())
+                    .finalAmount(order.getFinalAmount())
                     .createdAt(order.getCreatedAt())
                     .paidAt(order.getPaidAt())
                     .orderItems(orderItems)

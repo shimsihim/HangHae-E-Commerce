@@ -35,12 +35,11 @@ public class OrderController {
     }
 
     @PostMapping() // 주문 요청
-    public void makeOrder(@RequestBody MakeOrderReqDTO makeOrderReqDTO) {
+    public OrderResDTO makeOrder(@RequestBody MakeOrderReqDTO makeOrderReqDTO) {
         List<MakeOrderUseCase.Input.ItemInfo> items = makeOrderReqDTO.items().stream().map(item -> MakeOrderUseCase.Input.ItemInfo.of(item.productId(), item.productOptionId(),item.quantity())).toList();
-        MakeOrderUseCase.Input input = MakeOrderUseCase.Input.of(items , makeOrderReqDTO.userCouponId() , makeOrderReqDTO.usePointAmount());
-        makeOrderUseCase.execute(input);
-        List<ProductDetailResDTO.ProductOptionResDTO> options = output.options().stream().map(out -> ProductDetailResDTO.ProductOptionResDTO.of(out.id(),out.optionName(),out.price(),out.quantity())).toList();
-        return ProductDetailResDTO.of(output.id(),output.name(),output.description(),output.basePrice(),options);
+        MakeOrderUseCase.Input input = MakeOrderUseCase.Input.of(makeOrderReqDTO.userId(), items , makeOrderReqDTO.userCouponId() , makeOrderReqDTO.usePointAmount());
+        MakeOrderUseCase.Output output = makeOrderUseCase.execute(input);
+        return OrderResDTO.from(output);
     }
 
 

@@ -36,7 +36,14 @@ public class LockAspect {
         LockKey lockKey = lockAnn.lockKey();
 
         // @LockId 어노테이션이 붙은 필드에서 ID 추출
-        long id = extractLockId(joinPoint);
+
+        long id;
+        if(lockKey.equals(LockKey.Order)){
+            id = LockKey.Order.ordinal();
+        }
+        else{
+            id = extractLockId(joinPoint);
+        }
 
         Lock lock = lockManager.getLock(lockKey, id);
         if(lock.tryLock(waitTime, timeUnit)){

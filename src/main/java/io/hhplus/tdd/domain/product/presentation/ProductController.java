@@ -1,10 +1,8 @@
 package io.hhplus.tdd.domain.product.presentation;
 
 
-import io.hhplus.tdd.domain.point.application.GetUserPointQuery;
 import io.hhplus.tdd.domain.product.application.GetProductDetailUseCase;
 import io.hhplus.tdd.domain.product.application.GetProductListUseCase;
-import io.hhplus.tdd.domain.product.domain.service.ProductService;
 import io.hhplus.tdd.domain.product.presentation.dto.res.ProductDetailResDTO;
 import io.hhplus.tdd.domain.product.presentation.dto.res.ProductResDTO;
 import io.swagger.v3.oas.annotations.tags.Tag;

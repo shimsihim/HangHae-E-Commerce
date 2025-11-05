@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface ProductOptionRepository {
     List<ProductOption> findByProductId(long ProductId);
+    Optional<ProductOption> findById(long productOptionId);
+    ProductOption save(ProductOption productOption);
 }

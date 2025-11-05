@@ -51,27 +51,15 @@ public class PointUseUseCase {
         UserPoint userPoint = userPointRepository.findByUserId(input.userId())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND, input.userId()));
 
-        // 사용 전 잔액 백업 (롤백용)
-        long originalBalance = userPoint.getBalance();
+        // 2. 도메인 서비스를 통한 포인트 사용 로직 실행
+        PointHistory pointHistory = pointService.usePoint(userPoint, input.amount(), input.description());
 
-        try {
-            // 2. 도메인 서비스를 통한 포인트 사용 로직 실행
-            PointHistory pointHistory = pointService.usePoint(userPoint, input.amount(), input.description());
+        // 3. 변경된 포인트 정보 저장
+        UserPoint savedUserPoint = userPointRepository.save(userPoint);
 
-            // 3. 변경된 포인트 정보 저장
-            UserPoint savedUserPoint = userPointRepository.save(userPoint);
+        // 4. 이력 저장 , 에러 시 사용 롤백 X
+        pointHistoryRepository.save(pointHistory);
 
-            // 4. 포인트 이력 저장
-            pointHistoryRepository.save(pointHistory);
-
-            return Output.from(savedUserPoint);
-
-        } catch (Exception e) {
-            // 롤백: 포인트를 원래대로 복구
-            log.error("포인트 사용 실패. 롤백 수행. userId: {}, amount: {}", input.userId(), input.amount(), e);
-            userPoint.updateBalance(originalBalance);
-            userPointRepository.save(userPoint);
-            throw e;
-        }
+        return Output.from(savedUserPoint);
     }
 }

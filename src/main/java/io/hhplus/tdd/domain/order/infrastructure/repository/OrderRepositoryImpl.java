@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Repository
 @RequiredArgsConstructor
 public class OrderRepositoryImpl implements OrderRepository {
 
     private final Map<Long, Order> table = new ConcurrentHashMap<>();
+    private AtomicLong cursor = new AtomicLong(0);
 
     @Override
     public Optional<Order> findById(long orderId) {
@@ -30,5 +32,12 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public List<Order> findAll() {
         return table.values().stream().toList();
+    }
+
+    @Override
+    public Order save(Order order) {
+        order.setId(cursor.addAndGet(1));
+        table.put(order.getId(), order);
+        return order;
     }
 }

@@ -16,6 +16,7 @@ public record OrderResDTO(
         Long totalAmount,
         Long discountAmount,
         Long usePointAmount,
+        Long finalAmount,
         LocalDateTime createdAt,
         LocalDateTime paidAt,
         List<OrderItemResDTO> orderItems
@@ -33,9 +34,21 @@ public record OrderResDTO(
                     .totalAmount(orderInfo.totalAmount())
                     .discountAmount(orderInfo.discountAmount())
                     .usePointAmount(orderInfo.usePointAmount())
+                    .finalAmount(orderInfo.finalAmount())
                     .createdAt(orderInfo.createdAt())
                     .paidAt(orderInfo.paidAt())
                     .orderItems(orderItems)
+                    .build();
+        }
+
+        public static OrderResDTO from(io.hhplus.tdd.domain.order.application.MakeOrderUseCase.Output output){
+            return OrderResDTO.builder()
+                    .id(output.orderId())
+                    .userId(output.userId())
+                    .totalAmount(output.totalAmount())
+                    .discountAmount(output.discountAmount())
+                    .usePointAmount(output.usePointAmount())
+                    .finalAmount(output.finalAmount())
                     .build();
         }
 
