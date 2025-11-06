@@ -7,9 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 해당 Table 클래스는 변경하지 않고 공개된 API 만을 사용해 데이터를 제어합니다.
- */
+
 @Component
 public class UserPointTable {
     private final Map<Long, UserPoint> table = new ConcurrentHashMap<>();

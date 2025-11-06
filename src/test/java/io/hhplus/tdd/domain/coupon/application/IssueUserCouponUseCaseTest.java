@@ -1,0 +1,243 @@
+package io.hhplus.tdd.domain.coupon.application;
+
+import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
+import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
+import io.hhplus.tdd.domain.coupon.domain.model.Status;
+import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
+import io.hhplus.tdd.domain.coupon.domain.repository.CouponRepository;
+import io.hhplus.tdd.domain.coupon.domain.repository.UserCouponRepository;
+import io.hhplus.tdd.domain.coupon.domain.service.CouponService;
+import io.hhplus.tdd.domain.coupon.exception.CouponException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("쿠폰 발급 UseCase 테스트")
+class IssueUserCouponUseCaseTest {
+
+    @InjectMocks
+    IssueUserCouponUseCase issueUserCouponUseCase;
+
+    @Mock
+    CouponRepository couponRepository;
+
+    @Mock
+    UserCouponRepository userCouponRepository;
+
+    @Mock
+    CouponService couponService;
+
+    @Nested
+    @DisplayName("쿠폰 발급 성공")
+    class IssueSuccess {
+
+        @Test
+        @DisplayName("정상 쿠폰 발급")
+        void 정상_쿠폰_발급() {
+            // given
+            long couponId = 1L;
+            long userId = 100L;
+
+            Coupon coupon = Coupon.builder()
+                    .id(couponId)
+                    .couponName("테스트")
+                    .discountType(DiscountType.FIXED_AMOUNT)
+                    .discountValue(5000)
+                    .totalQuantity(100)
+                    .issuedQuantity(10)
+                    .limitPerUser(1)
+                    .duration(30)
+                    .minOrderValue(10000)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .build();
+
+            UserCoupon userCoupon = UserCoupon.builder()
+                    .id(1L)
+                    .userId(userId)
+                    .couponId(couponId)
+                    .status(Status.ISSUED)
+                    .expiredAt(LocalDateTime.now().plusDays(30))
+                    .build();
+
+            given(couponRepository.findById(couponId)).willReturn(Optional.of(coupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
+            given(couponService.issueCoupon(coupon , userId, anyList())).willReturn(userCoupon);
+            given(couponRepository.save(coupon)).willReturn(coupon);
+            given(userCouponRepository.save(userCoupon)).willReturn(userCoupon);
+
+            // when
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            issueUserCouponUseCase.execute(input);
+
+            // then
+            verify(couponRepository).findById(couponId);
+            verify(couponService).issueCoupon(coupon, userId, anyList());
+            verify(couponRepository).save(coupon);
+            verify(userCouponRepository).save(any(UserCoupon.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("쿠폰 발급 실패")
+    class IssueFailure {
+
+        @Test
+        @DisplayName("존재하지 않는 쿠폰")
+        void 존재하지_않는_쿠폰() {
+            // given
+            long couponId = 999L;
+            long userId = 100L;
+
+            given(couponRepository.findById(couponId)).willReturn(Optional.empty());
+
+
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            assertThatThrownBy(() ->
+                    // when
+                    issueUserCouponUseCase.execute(input)
+            )
+                    // then
+                    .isInstanceOf(CouponException.class);
+            //then
+            verify(couponRepository).findById(couponId);
+            verify(couponService, never()).issueCoupon(any(), anyLong(), anyList());
+        }
+
+        @Test
+        @DisplayName("쿠폰 발급 실패 시 롤백")
+        void 쿠폰_발급_실패_롤백() {
+            // given
+            long couponId = 1L;
+            long userId = 100L;
+            int originalIssuedQuantity = 10;
+
+            Coupon coupon = Coupon.builder()
+                    .id(couponId)
+                    .couponName("테스트 쿠폰")
+                    .discountType(DiscountType.FIXED_AMOUNT)
+                    .discountValue(5000)
+                    .totalQuantity(100)
+                    .issuedQuantity(originalIssuedQuantity)
+                    .limitPerUser(1)
+                    .duration(30)
+                    .minOrderValue(10000)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .build();
+
+            given(couponRepository.findById(couponId)).willReturn(Optional.of(coupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
+            given(couponService.issueCoupon(any(Coupon.class), eq(userId), anyList()))
+                    .willAnswer(invocation -> {
+                        Coupon c = invocation.getArgument(0);
+                        c.increaseIssuedQuantity(); // 발급 수량 증가
+                        throw new RuntimeException("UserCoupon 저장 실패");
+                    });
+            given(couponRepository.save(any(Coupon.class))).willReturn(coupon);
+
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            assertThatThrownBy(() -> issueUserCouponUseCase.execute(input))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("UserCoupon 저장 실패");
+
+            // 롤백을 위한 save가 호출되어야 함
+            verify(couponRepository).save(any(Coupon.class));
+        }
+
+        @Test
+        @DisplayName("사용자별 발급 제한 초과")
+        void 사용자별_발급_제한_초과() {
+            // given
+            long couponId = 1L;
+            long userId = 100L;
+
+            Coupon coupon = Coupon.builder()
+                    .id(couponId)
+                    .couponName("테스트 쿠폰")
+                    .discountType(DiscountType.FIXED_AMOUNT)
+                    .discountValue(5000)
+                    .totalQuantity(100)
+                    .issuedQuantity(10)
+                    .limitPerUser(1)  // 사용자당 1개만 발급 가능
+                    .duration(30)
+                    .minOrderValue(10000)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .build();
+
+            // 이미 발급받은 쿠폰
+            UserCoupon existingCoupon = UserCoupon.builder()
+                    .id(1L)
+                    .userId(userId)
+                    .couponId(couponId)
+                    .status(Status.ISSUED)
+                    .build();
+
+            given(couponRepository.findById(couponId)).willReturn(Optional.of(coupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId))
+                    .willReturn(List.of(existingCoupon));
+            given(couponService.issueCoupon(any(Coupon.class), eq(userId), anyList()))
+                    .willThrow(new CouponException(ErrorCode.COUPON_ISSUE_LIMIT_PER_USER, couponId));
+
+
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            assertThatThrownBy(() ->
+                    // when
+                    issueUserCouponUseCase.execute(input))
+                    // then
+                    .isInstanceOf(CouponException.class);
+        }
+
+        @Test
+        @DisplayName("쿠폰 발급 수량 초과")
+        void 쿠폰_발급_수량_초과() {
+            // given
+            long couponId = 1L;
+            long userId = 100L;
+
+            Coupon coupon = Coupon.builder()
+                    .id(couponId)
+                    .couponName("테스트 쿠폰")
+                    .discountType(DiscountType.FIXED_AMOUNT)
+                    .discountValue(5000)
+                    .totalQuantity(10)
+                    .issuedQuantity(10)
+                    .limitPerUser(1)
+                    .duration(30)
+                    .minOrderValue(10000)
+                    .validFrom(LocalDateTime.now().minusDays(1))
+                    .validUntil(LocalDateTime.now().plusDays(30))
+                    .build();
+
+            given(couponRepository.findById(couponId)).willReturn(Optional.of(coupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
+            given(couponService.issueCoupon(any(Coupon.class), eq(userId), anyList()))
+                    .willThrow(new CouponException(ErrorCode.COUPON_ISSUE_LIMIT, couponId));
+
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            // when
+            assertThatThrownBy(() -> issueUserCouponUseCase.execute(input))
+                    // then
+                    .isInstanceOf(CouponException.class);
+        }
+    }
+}

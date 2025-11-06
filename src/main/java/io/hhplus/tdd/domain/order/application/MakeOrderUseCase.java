@@ -109,10 +109,10 @@ public class MakeOrderUseCase {
 
         //  총 주문 금액 계산
         List<OrderService.OrderItemInfo> orderItems = input.items().stream()
-                .map(item -> OrderService.OrderItemInfo.of(item.productId(), item.productOptionId(), item.quantity()))
+                .map(item -> OrderService.OrderItemInfo.of(item.productId(), item.productOptionId() ,productOptionMap.get(item.productOptionId()).getPrice() , item.quantity()))
                 .toList();
 
-        long totalAmount = orderService.calculateTotalAmount(orderItems, productOptionMap);
+        long totalAmount = orderService.calculateTotalAmount(orderItems);
 
         // 쿠폰 검증 및 할인 금액 계산
         long discountAmount = 0;

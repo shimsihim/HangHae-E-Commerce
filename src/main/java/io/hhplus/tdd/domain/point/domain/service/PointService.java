@@ -4,11 +4,7 @@ import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import org.springframework.stereotype.Service;
 
-/**
- * 포인트 도메인 서비스
- * - 포인트 충전/사용과 관련된 도메인 로직을 캡슐화합니다.
- * - UserPoint와 PointHistory를 조합한 비즈니스 규칙을 처리합니다.
- */
+
 @Service
 public class PointService {
 

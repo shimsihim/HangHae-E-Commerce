@@ -63,11 +63,6 @@ public class LockAspect {
         }
     }
 
-    /**
-     * 메서드 파라미터에서 @LockId가 붙은 값을 추출합니다.
-     * 1. 직접 파라미터에 @LockId가 붙은 경우
-     * 2. Record Input 객체의 컴포넌트에 @LockId가 붙은 경우
-     */
     private long extractLockId(ProceedingJoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();

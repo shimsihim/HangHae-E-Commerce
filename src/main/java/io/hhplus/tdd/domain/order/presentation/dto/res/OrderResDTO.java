@@ -54,7 +54,7 @@ public record OrderResDTO(
 
 
         @Builder
-        public record OrderItemResDTO(
+        public static record OrderItemResDTO(
                 Long id,
                 Long orderItemId,
                 Long orderId,

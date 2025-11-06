@@ -34,11 +34,7 @@ public class Coupon {
         }
     }
 
-    /**
-     * 주문 금액에 대한 쿠폰 할인 금액을 계산합니다.
-     * @param orderAmount 주문 금액
-     * @return 할인 금액
-     */
+    //할인 계산
     public long calculateDiscountAmount(long orderAmount) {
         if(orderAmount < this.minOrderValue) {
             return 0;

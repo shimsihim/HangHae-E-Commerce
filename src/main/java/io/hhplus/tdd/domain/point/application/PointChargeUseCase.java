@@ -14,12 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-/**
- * 포인트 충전 애플리케이션 서비스
- * - 포인트 충전 유스케이스의 흐름을 조율합니다.
- * - Repository를 통한 데이터 조회/저장을 담당합니다.
- * - Domain Service에 비즈니스 로직을 위임합니다.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor

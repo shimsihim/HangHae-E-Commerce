@@ -39,7 +39,7 @@ public class GetOrderListUseCase {
 
 
     @Builder
-    public record OrderInfo(
+    public static record OrderInfo(
             Long id,
             Long userId,
             Long userCouponId,
@@ -71,7 +71,7 @@ public class GetOrderListUseCase {
 
     }
     @Builder
-    public record OrderItemInfo(
+    public static record OrderItemInfo(
             Long id,
             Long orderItemId,
             Long orderId,

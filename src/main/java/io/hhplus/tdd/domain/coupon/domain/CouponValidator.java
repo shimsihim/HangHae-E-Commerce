@@ -20,17 +20,3 @@ public class CouponValidator {
     }
 }
 
-
-/*
-    private Long id;
-    private String couponName;
-    private DiscountType discountType;
-    private int discountValue;
-    private int totalQuantity;
-    private int issuedQuantity;
-    private int limitPerUser;
-    private int duration;
-    private int minOrderValue;
-    private LocalDateTime validFrom;
-    private LocalDateTime validUntil;
- */

@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * 해당 Table 클래스는 변경하지 않고 공개된 API 만을 사용해 데이터를 제어합니다.
- */
+
 @Component
 public class PointHistoryTable {
     private final List<PointHistory> table = new ArrayList<>();

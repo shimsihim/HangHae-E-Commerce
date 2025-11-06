@@ -12,14 +12,10 @@ import java.util.Map;
 public class OrderService {
 
     //총 금액 계산
-    public long calculateTotalAmount(List<OrderItemInfo> items, Map<Long, ProductOption> productOptionMap) {
+    public long calculateTotalAmount(List<OrderItemInfo> items) {
         long totalAmount = 0;
         for (OrderItemInfo item : items) {
-            ProductOption productOption = productOptionMap.get(item.productOptionId());
-            if (productOption == null) {
-                throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND, item.productId(), item.productOptionId());
-            }
-            totalAmount += productOption.getPrice() * item.quantity();
+            totalAmount += item.optionPrice() * item.quantity();
         }
         return totalAmount;
     }
@@ -57,10 +53,11 @@ public class OrderService {
     public record OrderItemInfo(
             Long productId,
             Long productOptionId,
+            Long optionPrice,
             Long quantity
     ) {
-        public static OrderItemInfo of(Long productId, Long productOptionId, Long quantity) {
-            return new OrderItemInfo(productId, productOptionId, quantity);
+        public static OrderItemInfo of(Long productId, Long productOptionId,Long optionPrice, Long quantity) {
+            return new OrderItemInfo(productId, productOptionId ,optionPrice, quantity);
         }
     }
 }
