@@ -47,21 +47,28 @@ public class PointChargeUseCase {
 
     @LockAnn(lockKey = LockKey.USER)
     public Output execute(Input input){
-        UserPoint userPoint;
-        // 1. 사용자 포인트 조회
-        userPoint = userPointRepository.findByUserId(input.userId())
+
+        UserPoint userPoint = userPointRepository.findByUserId(input.userId())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND, input.userId()));
-        // 2. 도메인 서비스를 통한 포인트 충전 로직 실행
-        PointHistory pointHistory = pointService.chargePoint(userPoint, input.amount(), input.description());
 
-        // 3. 변경된 포인트 정보 저장
-        UserPoint savedUserPoint = userPointRepository.save(userPoint);
+        long originalBalance = userPoint.getBalance();
 
-        // 4. 이력 저장 , 에러 시 충전 롤백 X
-        pointHistoryRepository.save(pointHistory);
+        try {
+            PointHistory pointHistory = pointService.chargePoint(userPoint, input.amount(), input.description());
 
-        return Output.from(savedUserPoint);
+            UserPoint savedUserPoint = userPointRepository.save(userPoint);
 
+            pointHistoryRepository.save(pointHistory);
 
+            return Output.from(savedUserPoint);
+
+        } catch (Exception e) {
+            log.error("충전 실패. 유저 id: {}, 충전량: {}", input.userId(), input.amount(), e);
+
+            userPoint.updateBalance(originalBalance);
+            userPointRepository.save(userPoint);
+
+            throw e;
+        }
     }
 }

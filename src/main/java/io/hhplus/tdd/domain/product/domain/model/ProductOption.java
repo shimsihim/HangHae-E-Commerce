@@ -18,11 +18,22 @@ public class ProductOption {
     private Long quantity;
 
 
-    //재고 차감
-    public void deduct(long quantoity){
-        if(this.quantity < quantoity){
+    // 재고 차감 (검증 포함)
+    public void deduct(long quantity){
+        if(this.quantity < quantity){
             throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH , this.productId , this.id);
         }
-        this.quantity -=  quantoity;
+        this.quantity -= quantity;
+    }
+
+
+//  재고 차감 (검증 없음)
+    public void deductWithoutValidation(long quantity){
+        this.quantity -= quantity;
+    }
+
+    // 재고 복구
+    public void restore(long originalQuantity){
+        this.quantity = originalQuantity;
     }
 }

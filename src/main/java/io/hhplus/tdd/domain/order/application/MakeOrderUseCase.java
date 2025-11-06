@@ -14,6 +14,7 @@ import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.domain.model.OrderItem;
 import io.hhplus.tdd.domain.order.domain.repository.OrderItemRepository;
 import io.hhplus.tdd.domain.order.domain.repository.OrderRepository;
+import io.hhplus.tdd.domain.order.domain.service.OrderService;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import io.hhplus.tdd.domain.point.domain.repository.PointHistoryRepository;
@@ -46,6 +47,7 @@ public class MakeOrderUseCase {
 
     private final CouponService couponService;
     private final PointService pointService;
+    private final OrderService orderService;
 
     public record Input(
             Long userId,
@@ -92,31 +94,30 @@ public class MakeOrderUseCase {
 
     @LockAnn(lockKey = LockKey.Order)
     public Output execute(Input input) {
-        // 주문 항목별 상품 옵션 조회 및 재고 검증
+
         Map<Long, ProductOption> productOptionMap = new HashMap<>();
         Map<Long, Long> originalStockMap = new HashMap<>(); // 롤백용 원본 재고
-        long totalAmount = 0;
 
-        // 1. 재고 검증 및 총 주문 금액 계산
+        // 상품 옵션 조회 및 원본 재고 보관
         for (Input.ItemInfo item : input.items()) {
             ProductOption productOption = productOptionRepository.findById(item.productOptionId())
                     .orElseThrow(() -> new ProductException(ErrorCode.PRODUCT_NOT_FOUND, item.productId(), item.productOptionId()));
 
-            // 재고 검증
-            if (productOption.getQuantity() < item.quantity()) {
-                throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH, item.productId(), item.productOptionId());
-            }
-
             productOptionMap.put(item.productOptionId(), productOption);
             originalStockMap.put(item.productOptionId(), productOption.getQuantity());
-            totalAmount += productOption.getPrice() * item.quantity();
         }
 
-        // 2. 쿠폰 검증 및 할인 금액 계산
+        //  총 주문 금액 계산
+        List<OrderService.OrderItemInfo> orderItems = input.items().stream()
+                .map(item -> OrderService.OrderItemInfo.of(item.productId(), item.productOptionId(), item.quantity()))
+                .toList();
+
+        long totalAmount = orderService.calculateTotalAmount(orderItems, productOptionMap);
+
+        // 쿠폰 검증 및 할인 금액 계산
         long discountAmount = 0;
         Coupon coupon = null;
         UserCoupon userCoupon = null;
-        Status originalCouponStatus = null;
 
         if (input.userCouponId() != null) {
             userCoupon = userCouponRepository.findByUserIdAndUserCouponIdAndStatus(
@@ -127,26 +128,21 @@ public class MakeOrderUseCase {
             coupon = couponRepository.findById(userCoupon.getCouponId())
                     .orElseThrow(() -> new CouponException(ErrorCode.COUPON_NOT_FOUND, couponId));
 
-            originalCouponStatus = userCoupon.getStatus();
             discountAmount = couponService.applyDiscount(coupon, userCoupon, totalAmount);
         }
 
-        // 3. 포인트 검증
-        UserPoint userPoint = null;
-        long originalBalance = 0;
+        // 포인트 검증
         long usePointAmount = input.usePointAmount() != null ? input.usePointAmount() : 0;
 
-        if (usePointAmount > 0) {
-            userPoint = userPointRepository.findByUserId(input.userId())
-                    .orElseThrow(() -> new ProductException(ErrorCode.USER_NOT_FOUND, input.userId(), 0L));
-            originalBalance = userPoint.getBalance();
+        UserPoint userPoint = userPointRepository.findByUserId(input.userId())
+                .orElseThrow(() -> new ProductException(ErrorCode.USER_NOT_FOUND, input.userId(), 0L));
+        long originalBalance = userPoint.getBalance();
 
-            if (userPoint.getBalance() < usePointAmount) {
-                throw new PointRangeException(ErrorCode.USER_POINT_NOT_ENOUGH, input.userId(), userPoint.getBalance() , usePointAmount);
-            }
+        if (userPoint.getBalance() < usePointAmount) {
+            throw new PointRangeException(ErrorCode.USER_POINT_NOT_ENOUGH, input.userId(), userPoint.getBalance() , usePointAmount);
         }
 
-        // 4. 주문 생성 (PENDING 상태)
+        // 주문 생성 (PENDING 상태)
         Order order = Order.createOrder(
                 input.userId(),
                 input.userCouponId(),
@@ -157,30 +153,30 @@ public class MakeOrderUseCase {
         Order savedOrder = orderRepository.save(order);
 
         try {
-            // 5. 재고 차감
+            // 재고 차감 (도메인 서비스 사용)
+            orderService.validateAndDeductStock(orderItems, productOptionMap);
             for (Input.ItemInfo item : input.items()) {
                 ProductOption productOption = productOptionMap.get(item.productOptionId());
-                productOption.deduct(item.quantity());
                 productOptionRepository.save(productOption);
             }
 
-            // 6. 쿠폰 사용 처리 (이미 applyDiscount에서 처리됨)
+            // 쿠폰 사용 처리 (이미 applyDiscount에서 처리됨)
             if (userCoupon != null) {
                 userCouponRepository.save(userCoupon);
             }
 
-            // 7. 포인트 차감
+            // 포인트 차감
             if (usePointAmount > 0) {
                 PointHistory pointHistory = pointService.usePoint(userPoint, usePointAmount, "주문 결제");
                 userPointRepository.save(userPoint);
                 pointHistoryRepository.save(pointHistory);
             }
 
-            // 8. 주문 완료 처리 (PAID 상태로 변경)
+            // 주문 완료 처리 (PAID 상태로 변경)
             savedOrder.completeOrder();
             orderRepository.save(savedOrder);
 
-            // 9. 주문 항목 저장
+            // 주문 항목 저장
             for (Input.ItemInfo item : input.items()) {
                 ProductOption productOption = productOptionMap.get(item.productOptionId());
                 OrderItem orderItem = Order.createOrderItem(
@@ -195,40 +191,23 @@ public class MakeOrderUseCase {
             return Output.from(savedOrder);
 
         } catch (Exception e) {
-            log.error("주문 생성 실패. 롤백 수행. userId: {}, orderId: {}", input.userId(), savedOrder.getId(), e);
+            log.error("주문 실패. 롤백 수행. userId: {}, orderId: {}", input.userId(), savedOrder.getId(), e);
 
-            // 보상 트랜잭션: 재고 복구
+            // 재고 복구
+            orderService.restoreStock(orderItems, productOptionMap, originalStockMap);
             for (Input.ItemInfo item : input.items()) {
                 ProductOption productOption = productOptionMap.get(item.productOptionId());
-                Long originalStock = originalStockMap.get(item.productOptionId());
-                if (originalStock != null) {
-                    // 재고를 원래대로 복구
-                    ProductOption freshOption = productOptionRepository.findById(item.productOptionId()).orElse(null);
-                    if (freshOption != null) {
-                        // 차감된 수량만큼 다시 증가
-                        long difference = originalStock - freshOption.getQuantity();
-                        if (difference > 0) {
-                            freshOption = ProductOption.builder()
-                                    .id(freshOption.getId())
-                                    .productId(freshOption.getProductId())
-                                    .optionName(freshOption.getOptionName())
-                                    .price(freshOption.getPrice())
-                                    .quantity(originalStock)
-                                    .build();
-                            productOptionRepository.save(freshOption);
-                        }
-                    }
-                }
+                productOptionRepository.save(productOption);
             }
 
-            // 보상 트랜잭션: 쿠폰 복구
-            if (userCoupon != null && originalCouponStatus != null) {
+            // 쿠폰 복구
+            if (userCoupon != null) {
                 couponService.cancelUsage(userCoupon);
                 userCouponRepository.save(userCoupon);
             }
 
-            // 보상 트랜잭션: 포인트 복구
-            if (userPoint != null && usePointAmount > 0) {
+            // 포인트 복구
+            if (usePointAmount > 0) {
                 userPoint.updateBalance(originalBalance);
                 userPointRepository.save(userPoint);
             }
