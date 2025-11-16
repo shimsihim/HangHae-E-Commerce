@@ -35,4 +35,8 @@ public class PointService {
             description
         );
     }
+
+    public void validUsePoint(UserPoint userPoint , long usePoint){
+        userPoint.validUsePoint(usePoint);
+    }
 }

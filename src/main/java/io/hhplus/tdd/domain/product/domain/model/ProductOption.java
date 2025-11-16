@@ -36,20 +36,13 @@ public class ProductOption {
 
     // 재고 차감 검증 O
     public void deduct(long quantity){
+        deductValidation(quantity);
+        this.quantity -= quantity;
+    }
+
+    public void deductValidation(long quantity){
         if(this.quantity < quantity){
             throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH , this.productId , this.id);
         }
-        this.quantity -= quantity;
-    }
-
-
-//  재고 차감 검증 X
-    public void deductWithoutValidation(long quantity){
-        this.quantity -= quantity;
-    }
-
-    // 재고 복구
-    public void restore(long originalQuantity){
-        this.quantity = originalQuantity;
     }
 }

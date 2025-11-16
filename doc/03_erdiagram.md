@@ -12,13 +12,11 @@
 
 ```mermaid
 erDiagram
-    users ||--o{ cart : "보유"
     users ||--o{ orders : "생성"
     users ||--o{ user_coupons : "소유"
     users ||--o{ point_history : "소유"
     coupons ||--o{ user_coupons : "발급"
     products ||--o{ product_options : "하위"
-    product_options ||--o{ cart : "추가"
     orders ||--o{ order_items : "세부"
     orders ||--o| user_coupons : "사용"
 
@@ -27,7 +25,7 @@ erDiagram
     products ||--o{ product_statistics : "집계"
 
     users {
-        bigint id PK
+
         bigint balance "현재 포인트 잔액"
         datetime created_at
         datetime updated_at
@@ -97,8 +95,10 @@ erDiagram
         bigint discount_amount "쿠폰 할인 금액"
         bigint use_point_amount "포인트 사용 금액"
         bigint final_amount "최종 결제 금액"
+        varchar pg_key  "pg사의 결제번호"
         datetime created_at
         datetime paid_at
+        
     }
 
     order_items {
@@ -167,7 +167,6 @@ erDiagram
 - **UK 제약조건**: 비즈니스 로직상 필수적인 중복 방지만 DB 레벨에서 적용
   - users.email (중복 불가)
   - product_statistics (product_id, stat_date) 복합 유니크
-  - cart (user_id, product_option_id) 복합 유니크 - 같은 옵션은 수량만 증가
 - **Soft Delete**: users 테이블은 deleted_at을 통한 논리적 삭제 적용
 
 ---
@@ -207,13 +206,6 @@ CREATE INDEX idx_product_options_product ON product_options(product_id);
 ```
 ---
 
-### cart
-```sql
--- 사용자별 장바구니 조회용
-CREATE INDEX idx_cart_user ON cart(user_id);
--- 장바구니 중복 체크용 (UK와 동일)
-CREATE UNIQUE INDEX uk_cart_user_option ON cart(user_id, product_option_id);
-```
 ---
 
 ### coupons
@@ -360,23 +352,6 @@ CREATE INDEX idx_statistics_daily ON product_statistics(stat_date, daily_sales D
 CREATE INDEX idx_statistics_weekly ON product_statistics(stat_date, weekly_sales DESC);
 CREATE INDEX idx_statistics_monthly ON product_statistics(stat_date, monthly_sales DESC);
 
-
-
-
-
--- 장바구니 테이블
-CREATE TABLE cart (
-    cart_id BIGINT NOT NULL AUTO_INCREMENT,
-    user_id BIGINT NOT NULL,
-    product_option_id BIGINT NOT NULL,
-    quantity INT NOT NULL COMMENT '수량',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (cart_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='장바구니';
-
-CREATE INDEX idx_cart_user ON cart(user_id);
-CREATE UNIQUE INDEX uk_cart_user_option ON cart(user_id, product_option_id);
 
 
 

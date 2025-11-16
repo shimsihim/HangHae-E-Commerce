@@ -30,6 +30,11 @@ public enum ErrorCode {
     COUPON_MIN_ORDER_VALUE_ERR(HttpStatus.BAD_REQUEST, "C0007" , "최소 주문 금액을 충족하지 않습니다. 쿠폰 아이디 : %d"),
 
 
+    ORDER_AMOUNT_MUSE_POSITIVE(HttpStatus.BAD_REQUEST, "O0001" , "최종 금액은 음수가 될 수 없습니다."),
+    ORDER_NOT_FOUND(HttpStatus.BAD_REQUEST, "O0002" , "주문 정보를 찾을 수 없습니다. 주문id : %d"),
+    ORDER_NOT_VALID(HttpStatus.BAD_REQUEST, "O0003" , "주문이 이미 처리되었거나 만료되었습니다. 주문id : %d"),
+
+
     PRODUCT_NOT_ENOUGH(HttpStatus.BAD_REQUEST, "PR0001" , "제품의 재고가 충분하지 않습니다. 상품id : %d  , 상품옵션 id : %d"),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PR0002" , "제품을 찾을 수 없습니다.. 상품id : %d ");
 

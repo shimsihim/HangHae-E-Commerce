@@ -53,6 +53,11 @@ public class UserPoint extends UpdatableBaseEntity{
     }
 
     public void usePoint(long usePoint){
+        long newPoint = validUsePoint(usePoint);
+        this.balance = newPoint;
+    }
+
+    public long validUsePoint(long usePoint){
         if(usePoint < 0) throw new PointRangeException(ErrorCode.USER_POINT_MUST_POSITIVE , this.id , usePoint);
 
         if(usePoint < MIN_USE_AMOUNT) throw new PointRangeException(ErrorCode.USER_POINT_USE_MIN_AMOUNT , this.id , usePoint);
@@ -65,6 +70,6 @@ public class UserPoint extends UpdatableBaseEntity{
         catch(ArithmeticException e){
             throw new PointRangeException(ErrorCode.USER_POINT_OVERFLOW ,this.id , this.balance , usePoint );
         }
-        this.balance = newPoint;
+        return newPoint;
     }
 }

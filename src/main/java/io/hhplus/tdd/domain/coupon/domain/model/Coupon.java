@@ -4,11 +4,15 @@ import io.hhplus.tdd.common.baseEntity.CreatedBaseEntity;
 import io.hhplus.tdd.common.baseEntity.UpdatableBaseEntity;
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.exception.CouponException;
+import io.hhplus.tdd.domain.product.domain.model.ProductOption;
 import jakarta.persistence.*;
 import lombok.*;
+import org.apache.catalina.User;
 import org.springframework.data.domain.Auditable;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -21,6 +25,9 @@ public class Coupon extends CreatedBaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter
     private Long id;
+
+    @OneToMany(mappedBy = "coupon")
+    private List<UserCoupon> userCoupons = new ArrayList<>();
 
     @Column(nullable = false)
     private String couponName;

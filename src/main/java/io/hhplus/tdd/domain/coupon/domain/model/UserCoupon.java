@@ -49,12 +49,16 @@ public class UserCoupon extends CreatedBaseEntity {
     }
 
     public void useCoupon(){
+        validUseCoupon();
+        this.status = Status.USED;
+    }
+
+    public void validUseCoupon(){
         if (LocalDate.now().isAfter(this.getExpiredAt()) || this.status.equals(Status.EXPIRED)) {
             throw new CouponException(ErrorCode.COUPON_USER_EXPIRED, this.getId());
         }
         if (this.status.equals(Status.USED)) {
             throw new CouponException(ErrorCode.COUPON_USER_USED, this.getId());
         }
-        this.status = Status.USED;
     }
 }

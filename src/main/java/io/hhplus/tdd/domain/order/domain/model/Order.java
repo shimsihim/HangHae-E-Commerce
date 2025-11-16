@@ -1,6 +1,10 @@
 package io.hhplus.tdd.domain.order.domain.model;
 
 import io.hhplus.tdd.common.baseEntity.CreatedBaseEntity;
+import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
+import io.hhplus.tdd.domain.order.exception.OrderException;
+import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,9 +23,18 @@ public class Order extends CreatedBaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne
+    private UserPoint userPoint;
+
+    @Column(name = "user_id", insertable = false, updatable = false) // 단순 조회용
     private Long userId;
 
+    @JoinColumn(name = "user_id")
+    @ManyToOne
+    private UserCoupon userCoupon;
+
+    @Column(name = "user_coupon_id", insertable = false, updatable = false) // 단순 조회용
     private Long userCouponId;
 
     @Setter
@@ -46,30 +59,25 @@ public class Order extends CreatedBaseEntity {
 
 
     //주문 생성
-    public static Order createOrder(long userId, Long userCouponId, long totalAmount, long discountAmount, long usePointAmount) {
-        long finalAmount = totalAmount - discountAmount - usePointAmount;
+    public static Order createOrder(UserPoint userPoint, UserCoupon userCoupon, long totalAmount,
+                                    long discountAmount, long usePointAmount) {
+        long finalAmount = totalAmount - discountAmount;
+        if(finalAmount < 0){
+            throw new OrderException(ErrorCode.ORDER_AMOUNT_MUSE_POSITIVE);
+        }
+
+        Long userCouponId = (userCoupon != null) ? userCoupon.getId() : null;
 
         return Order.builder()
-                .userId(userId)
+                .userId(userPoint.getId())
+                .userPoint(userPoint)
                 .userCouponId(userCouponId)
+                .userCoupon(userCoupon)
                 .status(OrderStatus.PENDING)
                 .totalAmount(totalAmount)
                 .discountAmount(discountAmount)
                 .usePointAmount(usePointAmount)
                 .finalAmount(finalAmount)
-                .build();
-    }
-
-    //주문 아이템 생성
-    public static OrderItem createOrderItem(Order order,long productId ,  long productOptionId, int quantity, long unitPrice) {
-        return OrderItem.builder()
-                .order(order)
-                .orderId(order.getId())
-                .productId(productId)
-                .productOptionId(productOptionId)
-                .quantity(quantity)
-                .unitPrice(unitPrice)
-                .subTotal(unitPrice * quantity)
                 .build();
     }
 

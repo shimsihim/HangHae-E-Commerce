@@ -2,6 +2,8 @@ package io.hhplus.tdd.domain.order.domain.model;
 
 import io.hhplus.tdd.common.baseEntity.CreatedBaseEntity;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
+import io.hhplus.tdd.domain.product.domain.model.Product;
+import io.hhplus.tdd.domain.product.domain.model.ProductOption;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,10 +25,18 @@ public class OrderItem extends CreatedBaseEntity {
     @Column(name = "order_id", insertable = false, updatable = false) // 단순 조회용
     private Long orderId;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)  // FK
+    private Product product;
+
+    @Column(name = "product_id", insertable = false, updatable = false) // 단순 조회용
     private Long productId;
 
-    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "product_option_id", nullable = false)  // FK
+    private ProductOption productOption;
+
+    @Column(name = "product_option_id", insertable = false, updatable = false) // 단순 조회용
     private Long productOptionId;
 
     @Column(nullable = false)
@@ -35,7 +45,17 @@ public class OrderItem extends CreatedBaseEntity {
     @Column(nullable = false)
     private Long unitPrice;
 
-    @Column(nullable = false)
-    private Long subTotal;
+    public static OrderItem create(Order order , Product product , ProductOption productOption , int quantity , Long unitPrice){
+        return OrderItem.builder()
+                .order(order)
+                .orderId(order.getId())
+                .product(product)
+                .productId(product.getId())
+                .productOption(productOption)
+                .productOptionId(productOption.getId())
+                .quantity(quantity)
+                .unitPrice(unitPrice)
+                .build();
+    }
 
 }
