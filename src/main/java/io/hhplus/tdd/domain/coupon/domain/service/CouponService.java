@@ -27,24 +27,35 @@ public class CouponService {
         return UserCoupon.from(userId, coupon);
     }
 
-    //쿠폰이 적용여부 검증 및 할인 금액 계산 , 쿠폰 상태 변경
-    public long validUseUserCoupon(Coupon coupon, UserCoupon userCoupon, long orderAmount) {
+    /**
+     * 쿠폰 사용 가능 여부 검증 (사전 검증용 - 주문 생성 시)
+     * - 최소 주문 금액 충족 여부
+     * - 사용자 쿠폰 상태 (만료, 이미 사용)
+     * - 실제 사용은 하지 않음
+     * @return 예상 할인 금액
+     */
+    public long validateCouponUsage(Coupon coupon, UserCoupon userCoupon, long orderAmount) {
         // 1. 최소 주문 금액 검증
         validateMinOrderValue(coupon, orderAmount);
 
-        // 2. 쿠폰 검증 및 사용처리
+        // 2. 사용자 쿠폰 검증만 (상태 변경 없음)
         userCoupon.validUseCoupon();
 
         // 3. 할인 금액 계산
         return coupon.calculateDiscountAmount(orderAmount);
     }
 
-    //쿠폰이 적용여부 검증 및 할인 금액 계산 , 쿠폰 상태 변경
+    /**
+     * 쿠폰 실제 사용 처리 (결제 완료 시)
+     * - 내부에서 검증 재수행 (TOCTOU 방지)
+     * - 쿠폰 상태를 USED로 변경
+     * @return 할인 금액
+     */
     public long useUserCoupon(Coupon coupon, UserCoupon userCoupon, long orderAmount) {
-        // 1. 최소 주문 금액 검증
+        // 1. 최소 주문 금액 검증 (재검증)
         validateMinOrderValue(coupon, orderAmount);
 
-        // 2. 쿠폰 검증 및 사용처리
+        // 2. 쿠폰 사용 처리 (검증 + 상태 변경)
         userCoupon.useCoupon();
 
         // 3. 할인 금액 계산

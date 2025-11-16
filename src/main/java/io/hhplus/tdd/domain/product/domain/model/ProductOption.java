@@ -45,4 +45,12 @@ public class ProductOption {
             throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH , this.productId , this.id);
         }
     }
+
+    // 재고 복구 (주문 취소, 결제 실패 시)
+    public void restore(long quantity){
+        if(quantity < 0){
+            throw new IllegalArgumentException("복구 수량은 양수여야 합니다.");
+        }
+        this.quantity += quantity;
+    }
 }

@@ -30,7 +30,7 @@ public class Order extends CreatedBaseEntity {
     @Column(name = "user_id", insertable = false, updatable = false) // 단순 조회용
     private Long userId;
 
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_coupon_id")
     @ManyToOne
     private UserCoupon userCoupon;
 
@@ -61,7 +61,7 @@ public class Order extends CreatedBaseEntity {
     //주문 생성
     public static Order createOrder(UserPoint userPoint, UserCoupon userCoupon, long totalAmount,
                                     long discountAmount, long usePointAmount) {
-        long finalAmount = totalAmount - discountAmount;
+        long finalAmount = totalAmount - discountAmount - usePointAmount;
         if(finalAmount < 0){
             throw new OrderException(ErrorCode.ORDER_AMOUNT_MUSE_POSITIVE);
         }
@@ -85,5 +85,13 @@ public class Order extends CreatedBaseEntity {
     public void completeOrder() {
         this.setStatus(OrderStatus.PAID);
         this.setPaidAt(LocalDateTime.now());
+    }
+
+    //주문 취소
+    public void cancel() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new OrderException(ErrorCode.ORDER_CANNOT_CANCEL, this.id);
+        }
+        this.status = OrderStatus.CANCELLED;
     }
 }

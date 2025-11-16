@@ -45,6 +45,9 @@ public class OrderItem extends CreatedBaseEntity {
     @Column(nullable = false)
     private Long unitPrice;
 
+    @Column(nullable = false)
+    private Long subtotal;  // unitPrice * quantity
+
     public static OrderItem create(Order order , Product product , ProductOption productOption , int quantity , Long unitPrice){
         return OrderItem.builder()
                 .order(order)
@@ -55,6 +58,7 @@ public class OrderItem extends CreatedBaseEntity {
                 .productOptionId(productOption.getId())
                 .quantity(quantity)
                 .unitPrice(unitPrice)
+                .subtotal(unitPrice * quantity)
                 .build();
     }
 
