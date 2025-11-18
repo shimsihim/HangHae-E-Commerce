@@ -7,6 +7,7 @@ import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
 import io.hhplus.tdd.domain.coupon.domain.service.CouponService;
 import io.hhplus.tdd.domain.coupon.exception.CouponException;
 import io.hhplus.tdd.domain.coupon.infrastructure.repository.CouponRepository;
+import io.hhplus.tdd.domain.coupon.infrastructure.repository.UserCouponRepository;
 import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.domain.model.OrderItem;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderItemRepository;
@@ -39,6 +40,7 @@ public class CreateOrderUseCase {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final CouponRepository couponRepository;
+    private final UserCouponRepository userCouponRepository;
     private final UserPointRepository userPointRepository;
     private final ProductRepository productRepository;
 
@@ -114,15 +116,11 @@ public class CreateOrderUseCase {
         long discountAmount = 0;
 
         if (input.userCouponId() != null) {
-            coupon = couponRepository.findCouponWithUserCoupon(input.userCouponId())
+            userCoupon = userCouponRepository.findByIdWithCoupon(input.userCouponId())
                     .orElseThrow(() -> new CouponException(ErrorCode.COUPON_NOT_FOUND, input.userCouponId()));
+            coupon = userCoupon.getCoupon();
 
-            userCoupon = coupon.getUserCoupons().stream()
-                    .filter(uc -> uc.getId().equals(input.userCouponId()))
-                    .findFirst()
-                    .orElseThrow(() -> new CouponException(ErrorCode.COUPON_NOT_FOUND, input.userCouponId()));
-
-            // 쿠폰 사용 가능 여부 검증 (사전 검증)
+            // 쿠폰 사용 가능 여부 검증
             discountAmount = couponService.validateCouponUsage(coupon, userCoupon, totalAmount);
         }
 

@@ -26,8 +26,6 @@ public class Coupon extends CreatedBaseEntity {
     @Setter
     private Long id;
 
-    @OneToMany(mappedBy = "coupon")
-    private List<UserCoupon> userCoupons = new ArrayList<>();
 
     @Column(nullable = false)
     private String couponName;
@@ -59,9 +57,6 @@ public class Coupon extends CreatedBaseEntity {
 
     @Column(nullable = false)
     private LocalDate validUntil;
-
-    @Version
-    private Long version;
 
     public void increaseIssuedQuantity() {
         this.issuedQuantity++;

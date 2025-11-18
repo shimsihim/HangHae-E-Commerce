@@ -34,25 +34,15 @@ public class IssueUserCouponUseCase {
     ){}
 
     @Transactional
-    @Retryable(
-            value = {ObjectOptimisticLockingFailureException.class , DeadlockLoserDataAccessException.class}, // 재시도할 예외 유형
-            maxAttempts = 5,                                      // 최대 재시도 횟수
-            backoff = @Backoff(delay = 100, random = true)                       // 100ms 지연 후 재시도
-    )
     public void execute(Input input){
-
-
-        Coupon coupon = couponRepository.findById(input.couponId()).orElseThrow(()->{
-            log.warn("쿠폰 미존재");
+        Coupon coupon = couponRepository.findForPessimisticById(input.couponId()).orElseThrow(()->{
             throw new CouponException(ErrorCode.COUPON_NOT_FOUND, input.couponId());
         });
-        coupon.validIssue();
 
         List<UserCoupon> userIssuedCoupons = userCouponRepository.findByUserIdAndCouponId(input.userId(), input.couponId());
         UserCoupon userCoupon = couponService.issueCoupon(coupon, input.userId(), userIssuedCoupons);
         couponRepository.save(coupon);
         userCouponRepository.save(userCoupon);
-
     }
 
 }

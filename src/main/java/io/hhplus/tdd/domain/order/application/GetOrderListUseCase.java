@@ -88,7 +88,7 @@ public class GetOrderListUseCase {
                     .productOptionId(orderItem.getProductOptionId())
                     .quantity(orderItem.getQuantity())
                     .unitPrice(orderItem.getUnitPrice())
-                    .subTotal(orderItem.getSubTotal())
+                    .subTotal(orderItem.getSubtotal())
                     .build();
         }
     }
