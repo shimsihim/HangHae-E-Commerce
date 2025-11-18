@@ -36,7 +36,7 @@ public abstract class BaseIntegrationTest {
         registry.add("spring.datasource.password", mysql::getPassword);
     }
 
-    @SpyBean
+    @SpyBean // MockBean과의 차이점으로는 MockBean의 경우 껍데기만 있는 객체 ,SpyBean의 경우 스프링빈의 구현 기능을 일부만 덮어쓰고  덮어쓰지 않은 기능은 스프링빈 기능을 그대로 사용
     protected CouponService couponService;
 
     @SpyBean
