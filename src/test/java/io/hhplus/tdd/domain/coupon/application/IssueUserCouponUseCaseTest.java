@@ -40,7 +40,7 @@ class IssueUserCouponUseCaseTest {
     @Mock
     UserCouponRepository userCouponRepository;
 
-    @Spy// 실제 인스턴스를 생성
+    @Mock
     CouponService couponService;
 
     @Captor
@@ -81,6 +81,7 @@ class IssueUserCouponUseCaseTest {
 
             given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(coupon));
             given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
+            given(couponService.issueCoupon(eq(coupon), eq(userId), anyList())).willReturn(userCoupon);
 
             // when
             IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(coupon.getId(), userId);
@@ -99,14 +100,11 @@ class IssueUserCouponUseCaseTest {
 
 
             //호출 순서 검증
-            // Then (순서 검증)
-
-            // 1. 순서 검증을 위한 InOrder 객체를 생성합니다.
-            // 검증할 모든 Mock 객체를 인자로 넘깁니다.
+            // 검증할 모든 Mock 객체를 인자로
             InOrder inOrder = inOrder(couponRepository, userCouponRepository, couponService , couponRepository , userCouponRepository);
 
-            // 2. inOrder 객체를 사용하여 순서대로 verify를 수행합니다.
-            // 만약 이 순서가 실제 호출 순서와 다르다면 테스트는 실패합니다.
+            // inOrder 객체를 사용하여 순서대로 verify를 수행
+            // 실제 호출 순서와 다르다면 테스트 실패
             inOrder.verify(couponRepository).findForPessimisticById(eq(couponId));
             inOrder.verify(userCouponRepository).findByUserIdAndCouponId(userId, couponId);
             inOrder.verify(couponService).issueCoupon(eq(coupon), eq(userId) , anyList());
@@ -147,12 +145,107 @@ class IssueUserCouponUseCaseTest {
 
         @Test
         void 사용자_발급_제한_초과() {
+            // given
+            Coupon coupon = testNormalCoupon.build();
+            UserCoupon userCoupon = testNormalUserCoupon.coupon(coupon).couponId(coupon.getId()).expiredAt(LocalDate.now().plusDays(coupon.getDuration())).build();
 
+            long couponId = coupon.getId();
+            long userId = userCoupon.getUserId();
+
+            // 사용자가 이미 limitPerUser만큼 발급받은 상태
+            List<UserCoupon> alreadyIssuedCoupons = new ArrayList<>();
+            for (int i = 0; i < coupon.getLimitPerUser(); i++) {
+                alreadyIssuedCoupons.add(UserCoupon.builder()
+                        .id((long) i)
+                        .userId(userId)
+                        .couponId(couponId)
+                        .status(Status.ISSUED)
+                        .expiredAt(LocalDate.now().plusDays(duration))
+                        .build());
+            }
+
+            given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(coupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(alreadyIssuedCoupons);
+            given(couponService.issueCoupon(eq(coupon), eq(userId), eq(alreadyIssuedCoupons)))
+                    .willThrow(new CouponException(ErrorCode.COUPON_ISSUE_LIMIT_PER_USER, couponId));
+
+            // when & then
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            assertThatThrownBy(() -> issueUserCouponUseCase.execute(input))
+                    .isInstanceOf(CouponException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.COUPON_ISSUE_LIMIT_PER_USER);
+
+            // then
+            verify(couponRepository).findForPessimisticById(eq(couponId));
+            verify(userCouponRepository).findByUserIdAndCouponId(eq(userId), eq(couponId));
+            verify(couponService).issueCoupon(eq(coupon), eq(userId), eq(alreadyIssuedCoupons));
+            verify(couponRepository, never()).save(any());
+            verify(userCouponRepository, never()).save(any());
         }
 
         @Test
         void 쿠폰_발급_수량_초과() {
+            // given
+            // issuedQuantity가 totalQuantity에 도달한 쿠폰 생성
+            Coupon soldOutCoupon = testNormalCoupon
+                    .totalQuantity(100)
+                    .issuedQuantity(100)
+                    .build();
 
+            long couponId = soldOutCoupon.getId();
+            long userId = 1L;
+
+            given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(soldOutCoupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
+            given(couponService.issueCoupon(eq(soldOutCoupon), eq(userId), anyList()))
+                    .willThrow(new CouponException(ErrorCode.COUPON_ISSUE_LIMIT, couponId));
+
+            // when & then
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            assertThatThrownBy(() -> issueUserCouponUseCase.execute(input))
+                    .isInstanceOf(CouponException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.COUPON_ISSUE_LIMIT);
+
+            // then
+            verify(couponRepository).findForPessimisticById(eq(couponId));
+            verify(userCouponRepository).findByUserIdAndCouponId(eq(userId), eq(couponId));
+            verify(couponService).issueCoupon(eq(soldOutCoupon), eq(userId), anyList());
+            verify(couponRepository, never()).save(any());
+            verify(userCouponRepository, never()).save(any());
+        }
+
+        @Test
+        void 쿠폰_발급가능_기한_만료() {
+            // given
+            // issuedQuantity가 totalQuantity에 도달한 쿠폰 생성
+            Coupon expireCoupon = testNormalCoupon
+                    .validFrom(LocalDate.now().minusDays(10))
+                    .validUntil(LocalDate.now().minusDays(1))
+                    .build();
+
+            long couponId = expireCoupon.getId();
+            long userId = 1L;
+
+            given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(expireCoupon));
+            given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
+            given(couponService.issueCoupon(eq(expireCoupon), eq(userId), anyList()))
+                    .willThrow(new CouponException(ErrorCode.COUPON_DURATION_ERR, couponId));
+
+            // when & then
+            IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(couponId, userId);
+            assertThatThrownBy(() -> issueUserCouponUseCase.execute(input))
+                    .isInstanceOf(CouponException.class)
+                    .extracting("errorCode")
+                    .isEqualTo(ErrorCode.COUPON_DURATION_ERR);
+
+            // then
+            verify(couponRepository).findForPessimisticById(eq(couponId));
+            verify(userCouponRepository).findByUserIdAndCouponId(eq(userId), eq(couponId));
+            verify(couponService).issueCoupon(eq(expireCoupon), eq(userId), anyList());
+            verify(couponRepository, never()).save(any());
+            verify(userCouponRepository, never()).save(any());
         }
     }
 }

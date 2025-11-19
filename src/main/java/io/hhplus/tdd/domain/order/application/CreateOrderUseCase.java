@@ -39,7 +39,6 @@ public class CreateOrderUseCase {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final CouponRepository couponRepository;
     private final UserCouponRepository userCouponRepository;
     private final UserPointRepository userPointRepository;
     private final ProductRepository productRepository;
