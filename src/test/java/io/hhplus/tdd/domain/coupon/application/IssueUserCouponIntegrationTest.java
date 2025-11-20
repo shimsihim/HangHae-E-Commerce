@@ -2,6 +2,7 @@ package io.hhplus.tdd.domain.coupon.application;
 
 import com.mysql.cj.exceptions.AssertionFailedException;
 import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.domain.BaseIntegrationTest;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import io.hhplus.tdd.domain.coupon.domain.model.Status;
@@ -19,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -27,42 +27,20 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Testcontainers
-@Transactional
 @Slf4j
-class IssueUserCouponIntegrationTest {
-
-    @Container
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void registerProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", mysql::getJdbcUrl);
-        registry.add("spring.datasource.username", mysql::getUsername);
-        registry.add("spring.datasource.password", mysql::getPassword);
-    }
-
-    @Autowired
-    private EntityManager em;
+class IssueUserCouponIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private IssueUserCouponUseCase issueUserCouponUseCase;
 
-    @Autowired
-    private CouponRepository couponRepository;
-
-    @Autowired
-    private UserCouponRepository userCouponRepository;
-
-    @Autowired
-    private CouponService couponService;
 
     @Test
     @DisplayName("쿠폰 발급 통합 테스트 - 사용자가 쿠폰을 정상적으로 발급받는다")
@@ -82,7 +60,6 @@ class IssueUserCouponIntegrationTest {
                 .validUntil(LocalDate.now().plusDays(30))
                 .build();
         Coupon savedCoupon = couponRepository.save(coupon);
-        em.clear();
 
 
         long userId = 1L;
@@ -121,7 +98,6 @@ class IssueUserCouponIntegrationTest {
                 .validUntil(LocalDate.now().plusDays(30))
                 .build();
         Coupon savedCoupon = couponRepository.save(coupon);
-        em.clear();
 
         long userId = 1L;
 
@@ -157,10 +133,9 @@ class IssueUserCouponIntegrationTest {
                 .build();
         long userId = 1L;
         Coupon savedCoupon = couponRepository.save(coupon);
-        UserCoupon userCoupon = couponService.issueCoupon(coupon, userId, new ArrayList<>());
+        UserCoupon userCoupon = couponService.issueCoupon(coupon, userId);
         userCouponRepository.save(userCoupon);
 
-        em.clear();
 
 
         // when
@@ -173,14 +148,12 @@ class IssueUserCouponIntegrationTest {
         CouponException couponEx = (CouponException)ex;
         assertThat(couponEx.getErrCode()).isEqualTo(ErrorCode.COUPON_ISSUE_LIMIT_PER_USER);
 
-        em.clear();
         Coupon coupon2 =  couponRepository.findById(coupon.getId()).orElseThrow(()->new AssertionFailedException(""));
         assertThat(coupon.getIssuedQuantity()).isEqualTo(issuedCnt+1);
     }
 
 
-    /*@Test
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    @Test
     void 쿠폰_발급_동시성_테스트_성공() throws InterruptedException {
         // given
 
@@ -199,13 +172,9 @@ class IssueUserCouponIntegrationTest {
                 .validFrom(LocalDate.now().minusDays(1))
                 .validUntil(LocalDate.now().plusDays(30))
                 .build();
-        // 🌟 TransactionTemplate을 사용하여 셋업 데이터를 즉시 커밋
-        Coupon savedCoupon = transactionTemplate.execute(status -> {
-            // 이 블록은 새 트랜잭션에서 실행되고 즉시 커밋됩니다.
-            Coupon saved = couponRepository.save(coupon);
-            return saved;
-        });
-        log.warn("쿠폰아이디 : {}" , savedCoupon.getId());
+
+        Coupon savedCoupon = couponRepository.save(coupon);
+
 
 
         CountDownLatch startLatch = new CountDownLatch(1);
@@ -233,12 +202,11 @@ class IssueUserCouponIntegrationTest {
         startLatch.countDown();
         endLatch.await();
         executorService.shutdown();
-        em.clear();
 
 
         // then
         Coupon updatedCoupon = couponRepository.findById(savedCoupon.getId()).orElseThrow();
         assertThat(updatedCoupon.getIssuedQuantity())
                 .isEqualTo(threadCount + initIssuedCnt);
-    }*/
+    }
 }
