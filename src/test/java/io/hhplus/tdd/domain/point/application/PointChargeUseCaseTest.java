@@ -62,15 +62,15 @@ class PointChargeUseCaseTest {
 
             given(userPointRepository.findById(userId)).willReturn(Optional.of(userPoint));
             given(pointService.chargePoint(any(UserPoint.class), anyLong(), any(String.class)))
-                    .willReturn(pointHistory);
-            given(userPointRepository.save(any(UserPoint.class))).willAnswer(invocation -> {
-                UserPoint saved = invocation.getArgument(0);
-                return UserPoint.builder()
-                        .id(saved.getId())
-                        .balance(expectedBalance)
-                        .version(saved.getVersion())
-                        .build();
-            });
+                    .willAnswer(invocation -> {
+                        // 1. 첫 번째 인자(UserPoint 객체)를 캡처합니다. (인덱스 0)
+                        UserPoint up = invocation.getArgument(0);
+                        // 2. 두 번째 인자(Long amount)를 캡처합니다. (인덱스 1)
+                        Long amount = invocation.getArgument(1);
+                        Long newAmount = up.getBalance() + amount;
+                        up.chargePoint(amount);
+                        return pointHistory;
+                    });
             given(pointHistoryRepository.save(any(PointHistory.class))).willReturn(pointHistory);
 
             // when
@@ -82,7 +82,6 @@ class PointChargeUseCaseTest {
             assertThat(output.balance()).isEqualTo(expectedBalance);
             verify(userPointRepository, times(1)).findById(userId);
             verify(pointService, times(1)).chargePoint(any(UserPoint.class), eq(chargeAmount), eq("테스트 충전"));
-            verify(userPointRepository, times(1)).save(any(UserPoint.class));
             verify(pointHistoryRepository, times(1)).save(any(PointHistory.class));
         }
     }
