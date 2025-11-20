@@ -4,16 +4,22 @@ import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
 import io.hhplus.tdd.domain.coupon.exception.CouponException;
+import io.hhplus.tdd.domain.coupon.infrastructure.repository.UserCouponRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-
+@RequiredArgsConstructor
 @Service
 public class CouponService {
 
+    private final UserCouponRepository userCouponRepository;
+
     // 쿠폰 발급 가능 여부를 검증하고 발급 처리합니다.
-    public UserCoupon issueCoupon(Coupon coupon, long userId, List<UserCoupon> userIssuedCoupons) {
+    public UserCoupon issueCoupon(Coupon coupon, long userId) {
+
+        List<UserCoupon> userIssuedCoupons = userCouponRepository.findByUserIdAndCouponId(userId, coupon. getId());
         // 1. 쿠폰 발급 검증 (유효기간, 발급 가능 수량)
         coupon.validIssue();
 

@@ -5,6 +5,7 @@ import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
 import io.hhplus.tdd.domain.coupon.domain.service.CouponService;
 import io.hhplus.tdd.domain.order.domain.model.Order;
+import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import io.hhplus.tdd.domain.point.domain.service.PointService;
@@ -17,12 +18,12 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 주문 도메인 서비스
- * - 주문 생성 관련 비즈니스 로직 담당
+ * - 주문 생성, 검증, 결제 완료 처리 관련 비즈니스 로직
  * - UseCase는 흐름 조정만, 핵심 로직은 여기에 위치
  */
 @Service
@@ -34,137 +35,161 @@ public class OrderService {
     private final PointHistoryRepository pointHistoryRepository;
 
     /**
-     * 주문 가능 여부를 검증합니다 (재고, 상품 존재 여부)
-     * @param products 주문할 상품 목록
-     * @param requestedOptionMap 요청된 옵션 ID와 수량 맵
+     * 주문 항목 정보
      */
-    public void validateProductsExist(List<Product> products, Map<Long, RequestedOption> requestedOptionMap) {
-        Set<Long> requestedOptionIds = requestedOptionMap.keySet();
-
-        Set<Long> foundOptionIds = products.stream()
-                .flatMap(product -> product.getOptions().stream())
-                .map(ProductOption::getId)
-                .collect(Collectors.toSet());
-
-        Set<Long> missingOptionIds = requestedOptionIds.stream()
-                .filter(id -> !foundOptionIds.contains(id))
-                .collect(Collectors.toSet());
-
-        if (!missingOptionIds.isEmpty()) {
-            throw new ProductException(ErrorCode.PRODUCT_NOT_FOUNDS, missingOptionIds.toString());
-        }
-    }
+    public record OrderItemInfo(
+            Long productOptionId,
+            int quantity
+    ) {}
 
     /**
-     * 재고를 선점합니다 (차감)
-     * @param products 재고 차감할 상품 목록
-     * @param requestedOptionMap 요청된 옵션 ID와 수량 맵
-     * @return 총 주문 금액 (할인 미적용)
+     * 주문 가능 여부를 검증합니다
+     * - 상품/옵션 존재 여부 검증
+     * - 재고 충분 여부 검증 (차감하지 않음)
+     *
+     * @param productOptions 조회된 상품옵션 목록
+     * @param orderItems 주문 항목 목록
+     * @return 검증 결과 (총 주문 금액)
      */
-    public long reserveStock(List<Product> products, Map<Long, RequestedOption> requestedOptionMap) {
+    public long validOrder(List<ProductOption> productOptions , List<OrderItemInfo> orderItems){
+        if(productOptions.size() == 0 || productOptions.size() != orderItems.size()){
+            throw new OrderException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
         long totalAmount = 0;
 
-        for (Product product : products) {
-            for (ProductOption option : product.getOptions()) {
-                RequestedOption requested = requestedOptionMap.get(option.getId());
-                if (requested != null) {
-                    option.deduct(requested.quantity());
-                    totalAmount += option.getPrice() * requested.quantity();
-                }
+        for(OrderItemInfo info : orderItems){
+            ProductOption po = productOptions.stream()
+                    .filter(option -> option.getId().equals(info.productOptionId()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("해당하는 상품 옵션을 찾을 수 없습니다."));
+            totalAmount += po.validateStock(info.quantity());
+        }
+        return totalAmount;
+    }
+
+
+    /**
+     * 재고를 차감합니다 (결제 완료 시점에 호출)
+     *
+     * @param products 재고 차감할 상품 목록
+     * @param orderItems 주문 항목 목록
+     */
+    public void deductStock(List<Product> products, List<OrderItemInfo> orderItems) {
+        Map<Long, ProductOption> optionMap = products.stream()
+                .flatMap(product -> product.getOptions().stream())
+                .collect(Collectors.toMap(ProductOption::getId, Function.identity()));
+
+        for (OrderItemInfo item : orderItems) {
+            ProductOption option = optionMap.get(item.productOptionId());
+            if (option != null) {
+                option.deduct(item.quantity());
             }
         }
-
-        return totalAmount;
     }
 
     /**
      * 재고를 복구합니다 (주문 취소, 결제 실패 시)
+     *
      * @param products 재고 복구할 상품 목록
-     * @param requestedOptionMap 복구할 옵션 ID와 수량 맵
+     * @param orderItems 주문 항목 목록
      */
-    public void releaseStock(List<Product> products, Map<Long, RequestedOption> requestedOptionMap) {
-        for (Product product : products) {
-            for (ProductOption option : product.getOptions()) {
-                RequestedOption requested = requestedOptionMap.get(option.getId());
-                if (requested != null) {
-                    option.restore(requested.quantity());
-                }
+    public void restoreStock(List<Product> products, List<OrderItemInfo> orderItems) {
+        Map<Long, ProductOption> optionMap = products.stream()
+                .flatMap(product -> product.getOptions().stream())
+                .collect(Collectors.toMap(ProductOption::getId, Function.identity()));
+
+        for (OrderItemInfo item : orderItems) {
+            ProductOption option = optionMap.get(item.productOptionId());
+            if (option != null) {
+                option.restore(item.quantity());
             }
         }
     }
 
     /**
      * 즉시 완료 주문 처리 (finalAmount가 0원인 경우)
+     * - 재고 차감
      * - 포인트 차감
      * - 쿠폰 사용
      * - 주문 상태 PAID 변경
+     *
      * @param order 주문 엔티티
+     * @param products 상품 목록
+     * @param orderItems 주문 항목 목록
      */
-    public void completeImmediateOrder(Order order) {
-        UserPoint userPoint = order.getUserPoint();
-        UserCoupon userCoupon = order.getUserCoupon();
-        long usePointAmount = order.getUsePointAmount();
-        long totalAmount = order.getTotalAmount();
+    public void completeImmediateOrder(Order order, List<Product> products, List<OrderItemInfo> orderItems) {
+        // 1. 재고 차감
+        deductStock(products, orderItems);
 
-        // 포인트 차감
-        if (usePointAmount > 0) {
-            PointHistory pointHistory = pointService.usePoint(userPoint, usePointAmount, "Buy Product");
-            pointHistoryRepository.save(pointHistory);
-        }
+        // 2. 포인트 차감
+        processPointDeduction(order);
 
-        // 쿠폰 사용
-        if (userCoupon != null) {
-            Coupon coupon = userCoupon.getCoupon();
-            couponService.useUserCoupon(coupon, userCoupon, totalAmount);
-        }
+        // 3. 쿠폰 사용
+        processCouponUsage(order);
 
-        // 주문 완료 처리
+        // 4. 주문 완료 처리
         order.completeOrder();
     }
 
     /**
      * PG 결제 완료 후 주문 완료 처리
-     * - PayCompleteOrderUseCase에서 호출
-     * - 포인트 차감, 쿠폰 사용, 주문 상태 변경
+     * - 재고 차감
+     * - 포인트 차감
+     * - 쿠폰 사용
+     * - 주문 상태 PAID 변경
+     *
      * @param order 주문 엔티티
+     * @param products 상품 목록
+     * @param orderItems 주문 항목 목록
      */
-    public void completeOrderWithPayment(Order order) {
-        UserPoint userPoint = order.getUserPoint();
-        UserCoupon userCoupon = order.getUserCoupon();
-        long usePointAmount = order.getUsePointAmount();
-        long totalAmount = order.getTotalAmount();
+    public void completeOrderWithPayment(Order order, List<Product> products, List<OrderItemInfo> orderItems) {
+        // 1. 재고 차감
+        deductStock(products, orderItems);
 
-        // 포인트 차감
+        // 2. 포인트 차감
+        processPointDeduction(order);
+
+        // 3. 쿠폰 사용
+        processCouponUsage(order);
+
+        // 4. 주문 완료 처리
+        order.completeOrder();
+    }
+
+    /**
+     * 포인트 차감 처리 (private 헬퍼 메서드)
+     */
+    private void processPointDeduction(Order order) {
+        UserPoint userPoint = order.getUserPoint();
+        long usePointAmount = order.getUsePointAmount();
+
         if (usePointAmount > 0) {
             PointHistory pointHistory = pointService.usePoint(userPoint, usePointAmount, "Buy Product");
             pointHistoryRepository.save(pointHistory);
         }
+    }
 
-        // 쿠폰 사용
+    /**
+     * 쿠폰 사용 처리 (private 헬퍼 메서드)
+     */
+    private void processCouponUsage(Order order) {
+        UserCoupon userCoupon = order.getUserCoupon();
+
         if (userCoupon != null) {
             Coupon coupon = userCoupon.getCoupon();
+            long totalAmount = order.getTotalAmount();
             couponService.useUserCoupon(coupon, userCoupon, totalAmount);
         }
-
-        // 주문 완료 처리
-        order.completeOrder();
     }
 
     /**
      * 주문 취소 처리
      * - 재고 복구는 CancelOrderUseCase에서 처리
      * - 여기서는 주문 상태만 변경
+     *
      * @param order 취소할 주문
      */
     public void cancelOrder(Order order) {
         order.cancel();
     }
-
-    /**
-     * 요청된 옵션 정보 (DTO)
-     */
-    public record RequestedOption(
-            Long productOptionId,
-            int quantity
-    ) {}
 }

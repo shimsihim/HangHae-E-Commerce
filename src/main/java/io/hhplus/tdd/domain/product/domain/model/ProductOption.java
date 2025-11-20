@@ -34,20 +34,29 @@ public class ProductOption {
     private Long quantity;
 
 
-    // 재고 차감 검증 O
-    public void deduct(long quantity){
-        deductValidation(quantity);
+    /**
+     * 재고 충분 여부 검증 (차감하지 않음)
+     * 주문 생성 시 검증용
+     */
+    public long validateStock(int requestQuantity){
+        if(this.quantity < requestQuantity){
+            throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH , this.productId , this.id);
+        }
+        return this.getPrice() * requestQuantity;
+    }
+
+    /**
+     * 재고 차감 (결제 완료 시)
+     */
+    public void deduct(int quantity){
+        validateStock(quantity);
         this.quantity -= quantity;
     }
 
-    public void deductValidation(long quantity){
-        if(this.quantity < quantity){
-            throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH , this.productId , this.id);
-        }
-    }
-
-    // 재고 복구 (주문 취소, 결제 실패 시)
-    public void restore(long quantity){
+    /**
+     * 재고 복구 (주문 취소, 결제 실패 시)
+     */
+    public void restore(int quantity){
         if(quantity < 0){
             throw new IllegalArgumentException("복구 수량은 양수여야 합니다.");
         }

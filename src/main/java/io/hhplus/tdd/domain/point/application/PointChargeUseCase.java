@@ -43,14 +43,10 @@ public class PointChargeUseCase {
         UserPoint userPoint = userPointRepository.findById(input.userId())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND, input.userId()));
 
-        long originalBalance = userPoint.getBalance();
-
         PointHistory pointHistory = pointService.chargePoint(userPoint, input.amount(), input.description());
-
-        UserPoint savedUserPoint = userPointRepository.save(userPoint);
 
         pointHistoryRepository.save(pointHistory);
 
-        return Output.from(savedUserPoint);
+        return Output.from(userPoint);
     }
 }

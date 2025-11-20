@@ -133,7 +133,7 @@ class IssueUserCouponIntegrationTest extends BaseIntegrationTest {
                 .build();
         long userId = 1L;
         Coupon savedCoupon = couponRepository.save(coupon);
-        UserCoupon userCoupon = couponService.issueCoupon(coupon, userId, new ArrayList<>());
+        UserCoupon userCoupon = couponService.issueCoupon(coupon, userId);
         userCouponRepository.save(userCoupon);
 
 

@@ -16,4 +16,6 @@ public interface UserCouponRepository extends JpaRepository<UserCoupon, Long> {
 
     @Query("SELECT uc FROM UserCoupon uc JOIN FETCH uc.coupon WHERE uc.id = :userCouponId")
     Optional<UserCoupon> findByIdWithCoupon(@Param("userCouponId") Long userCouponId);
+
+
 }

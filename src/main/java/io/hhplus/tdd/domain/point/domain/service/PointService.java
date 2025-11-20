@@ -48,6 +48,4 @@ public class PointService {
             description
         );
     }
-
-    // validUsePoint 제거 - UseCase에서 userPoint.validUsePoint() 직접 호출
 }

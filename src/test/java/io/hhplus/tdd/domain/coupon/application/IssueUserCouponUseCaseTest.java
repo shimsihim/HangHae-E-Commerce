@@ -81,7 +81,7 @@ class IssueUserCouponUseCaseTest {
 
             given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(coupon));
             given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
-            given(couponService.issueCoupon(eq(coupon), eq(userId), anyList())).willReturn(userCoupon);
+            given(couponService.issueCoupon(eq(coupon), eq(userId))).willReturn(userCoupon);
 
             // when
             IssueUserCouponUseCase.Input input = new IssueUserCouponUseCase.Input(coupon.getId(), userId);
@@ -89,7 +89,7 @@ class IssueUserCouponUseCaseTest {
 
             // then
             verify(couponRepository).findForPessimisticById(eq(couponId));
-            verify(couponService).issueCoupon(eq(coupon), eq(userId), anyList());
+            verify(couponService).issueCoupon(eq(coupon), eq(userId));
             verify(couponRepository).save(eq(coupon));
             verify(userCouponRepository).save(userCouponArgumentCaptor.capture());
             UserCoupon capturedUserCoupon = userCouponArgumentCaptor.getValue();
@@ -107,7 +107,7 @@ class IssueUserCouponUseCaseTest {
             // 실제 호출 순서와 다르다면 테스트 실패
             inOrder.verify(couponRepository).findForPessimisticById(eq(couponId));
             inOrder.verify(userCouponRepository).findByUserIdAndCouponId(userId, couponId);
-            inOrder.verify(couponService).issueCoupon(eq(coupon), eq(userId) , anyList());
+            inOrder.verify(couponService).issueCoupon(eq(coupon), eq(userId) );
             inOrder.verify(couponRepository).save(any());
             inOrder.verify(userCouponRepository).save(any());
         }
@@ -138,7 +138,7 @@ class IssueUserCouponUseCaseTest {
                     .isInstanceOf(CouponException.class);
             //then
             verify(userCouponRepository , never()).findByUserIdAndCouponId(anyLong(), anyLong());
-            verify(couponService, never()).issueCoupon(any(), anyLong(), anyList());
+            verify(couponService, never()).issueCoupon(any(), anyLong());
             verify(couponRepository , never()).save(any());
             verify(userCouponRepository , never()).save(any());
         }
@@ -166,7 +166,7 @@ class IssueUserCouponUseCaseTest {
 
             given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(coupon));
             given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(alreadyIssuedCoupons);
-            given(couponService.issueCoupon(eq(coupon), eq(userId), eq(alreadyIssuedCoupons)))
+            given(couponService.issueCoupon(eq(coupon), eq(userId)))
                     .willThrow(new CouponException(ErrorCode.COUPON_ISSUE_LIMIT_PER_USER, couponId));
 
             // when & then
@@ -179,7 +179,7 @@ class IssueUserCouponUseCaseTest {
             // then
             verify(couponRepository).findForPessimisticById(eq(couponId));
             verify(userCouponRepository).findByUserIdAndCouponId(eq(userId), eq(couponId));
-            verify(couponService).issueCoupon(eq(coupon), eq(userId), eq(alreadyIssuedCoupons));
+            verify(couponService).issueCoupon(eq(coupon), eq(userId));
             verify(couponRepository, never()).save(any());
             verify(userCouponRepository, never()).save(any());
         }
@@ -198,7 +198,7 @@ class IssueUserCouponUseCaseTest {
 
             given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(soldOutCoupon));
             given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
-            given(couponService.issueCoupon(eq(soldOutCoupon), eq(userId), anyList()))
+            given(couponService.issueCoupon(eq(soldOutCoupon), eq(userId)))
                     .willThrow(new CouponException(ErrorCode.COUPON_ISSUE_LIMIT, couponId));
 
             // when & then
@@ -211,7 +211,7 @@ class IssueUserCouponUseCaseTest {
             // then
             verify(couponRepository).findForPessimisticById(eq(couponId));
             verify(userCouponRepository).findByUserIdAndCouponId(eq(userId), eq(couponId));
-            verify(couponService).issueCoupon(eq(soldOutCoupon), eq(userId), anyList());
+            verify(couponService).issueCoupon(eq(soldOutCoupon), eq(userId));
             verify(couponRepository, never()).save(any());
             verify(userCouponRepository, never()).save(any());
         }
@@ -230,7 +230,7 @@ class IssueUserCouponUseCaseTest {
 
             given(couponRepository.findForPessimisticById(couponId)).willReturn(Optional.of(expireCoupon));
             given(userCouponRepository.findByUserIdAndCouponId(userId, couponId)).willReturn(new ArrayList<>());
-            given(couponService.issueCoupon(eq(expireCoupon), eq(userId), anyList()))
+            given(couponService.issueCoupon(eq(expireCoupon), eq(userId)))
                     .willThrow(new CouponException(ErrorCode.COUPON_DURATION_ERR, couponId));
 
             // when & then
@@ -243,7 +243,7 @@ class IssueUserCouponUseCaseTest {
             // then
             verify(couponRepository).findForPessimisticById(eq(couponId));
             verify(userCouponRepository).findByUserIdAndCouponId(eq(userId), eq(couponId));
-            verify(couponService).issueCoupon(eq(expireCoupon), eq(userId), anyList());
+            verify(couponService).issueCoupon(eq(expireCoupon), eq(userId));
             verify(couponRepository, never()).save(any());
             verify(userCouponRepository, never()).save(any());
         }

@@ -10,26 +10,30 @@ import io.hhplus.tdd.domain.coupon.infrastructure.repository.CouponRepository;
 import io.hhplus.tdd.domain.coupon.infrastructure.repository.UserCouponRepository;
 import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.domain.model.OrderItem;
+import io.hhplus.tdd.domain.order.domain.service.OrderService;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderItemRepository;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderRepository;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
-import io.hhplus.tdd.domain.order.domain.service.OrderService;
+import io.hhplus.tdd.domain.point.domain.service.PointService;
 import io.hhplus.tdd.domain.point.infrastructure.repository.UserPointRepository;
 import io.hhplus.tdd.domain.product.domain.model.Product;
 import io.hhplus.tdd.domain.product.domain.model.ProductOption;
+import io.hhplus.tdd.domain.product.infrastructure.repository.ProductOptionRepository;
 import io.hhplus.tdd.domain.product.infrastructure.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
  * 주문 생성 UseCase
- * - 주문 생성 및 재고 선점
- * - finalAmount가 0원이면 즉시 완료 처리
+ * - 주문 생성 및 검증 (재고 검증만, 차감하지 않음)
+ * - finalAmount가 0원이면 즉시 완료 처리 (재고/포인트/쿠폰 모두 처리)
  * - 그 외에는 PENDING 상태로 저장 (PG 결제 대기)
  */
 @Service
@@ -39,12 +43,15 @@ public class CreateOrderUseCase {
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final UserCouponRepository userCouponRepository;
+    private final CouponRepository couponRepository;
     private final UserPointRepository userPointRepository;
     private final ProductRepository productRepository;
 
     private final CouponService couponService;
     private final OrderService orderService;
+    private final PointService pointService;
+    private final UserCouponRepository userCouponRepository;
+    private final ProductOptionRepository productOptionRepository;
 
     public record Input(
             Long userId,
@@ -59,10 +66,9 @@ public class CreateOrderUseCase {
         }
 
         public record ProductInfo(
-                Long productOptionId,  // productId 제거 (불필요)
+                Long productOptionId,
                 int quantity
-        ){
-        }
+        ) {}
     }
 
     public record Output(
@@ -88,60 +94,55 @@ public class CreateOrderUseCase {
 
     @Transactional
     public Output execute(Input input) {
-        // 1. 사용자 조회
-        UserPoint userPoint = userPointRepository.findById(input.userId)
+        // 1. 사용자 포인트 검증
+        UserPoint userPoint = userPointRepository.findById(input.userId())
                 .orElseThrow(() -> new UserNotFoundException(ErrorCode.USER_NOT_FOUND, input.userId()));
-
-        // 2. 요청된 옵션 맵 생성 (OrderService.RequestedOption 타입으로 변환)
-        Map<Long, OrderService.RequestedOption> requestedOptionMap = input.items().stream()
-                .collect(Collectors.toMap(
-                        Input.ProductInfo::productOptionId,
-                        item -> new OrderService.RequestedOption(item.productOptionId(), item.quantity())
-                ));
-
-        // 3. 상품 및 옵션 조회
-        List<Long> optionIds = new ArrayList<>(requestedOptionMap.keySet());
-        List<Product> products = productRepository.findProductsWithOptions(optionIds);
-
-        // 4. 상품 존재 여부 검증 (Domain Service)
-        orderService.validateProductsExist(products, requestedOptionMap);
-
-        // 5. 재고 선점 및 총 금액 계산 (Domain Service)
-        long totalAmount = orderService.reserveStock(products, requestedOptionMap);
-
-        // 6. 쿠폰 검증 및 할인 금액 계산
-        UserCoupon userCoupon = null;
-        Coupon coupon = null;
-        long discountAmount = 0;
-
-        if (input.userCouponId() != null) {
-            userCoupon = userCouponRepository.findByIdWithCoupon(input.userCouponId())
-                    .orElseThrow(() -> new CouponException(ErrorCode.COUPON_NOT_FOUND, input.userCouponId()));
-            coupon = userCoupon.getCoupon();
-
-            // 쿠폰 사용 가능 여부 검증
-            discountAmount = couponService.validateCouponUsage(coupon, userCoupon, totalAmount);
-        }
-
-        // 7. 포인트 검증 (사전 검증, UserPoint 엔티티 직접 호출)
         userPoint.validUsePoint(input.usePointAmount());
 
-        // 8. 주문 엔티티 생성 (PENDING 상태)
+
+        long discountAmount = 0;
+        long totalAmount = 0;
+
+
+        // 2. 재고 검증
+        List<OrderService.OrderItemInfo> orderItems = input.items().stream()
+                .map(item -> new OrderService.OrderItemInfo(item.productOptionId(), item.quantity()))
+                .toList();
+        List<Long> optionIds = orderItems.stream()
+                .map(OrderService.OrderItemInfo::productOptionId)
+                .toList();
+        List<ProductOption> productOptions = productOptionRepository.findAllWithProductByIdIn(optionIds);
+        totalAmount = orderService.validOrder(productOptions , orderItems);
+
+
+        // 3. 쿠폰 검증
+        UserCoupon userCoupon = null;
+        if(input.userCouponId() != null){
+            userCoupon = userCouponRepository.findByIdWithCoupon(input.userCouponId()).orElseThrow(()->
+                    new CouponException(ErrorCode.COUPON_NOT_FOUND, input.userCouponId())
+            );
+            // 3. 사용자 쿠폰 검증
+            Coupon coupon = userCoupon.getCoupon();
+            discountAmount = couponService.validateCouponUsage(coupon, userCoupon, totalAmount);
+        }
+        // 4. 주문생성
         Order newOrder = Order.createOrder(userPoint, userCoupon, totalAmount, discountAmount, input.usePointAmount());
 
-        // 9. finalAmount가 0원이면 즉시 완료 처리 (Domain Service)
+        // 5. finalAmount가 0원이면 즉시 완료 처리
         long finalAmount = newOrder.getFinalAmount();
         if (finalAmount == 0) {
-            orderService.completeImmediateOrder(newOrder);
+            // 재고 차감이 필요하므로 락을 걸고 다시 조회
+            List<Product> productsWithLock = productRepository.findProductsWithOptionsForUpdate(optionIds);
+            // 재고 차감, 포인트 차감, 쿠폰 사용 모두 처리
+            orderService.completeImmediateOrder(newOrder, productsWithLock, orderItems);
         }
-        // 그 외에는 PENDING 상태 유지 (PG 결제 대기)
 
-        // 10. 주문 저장
+        // 6. 주문 저장
         Order savedOrder = orderRepository.save(newOrder);
 
-        // 11. 주문 항목 생성 및 저장
-        List<OrderItem> orderItems = createOrderItems(savedOrder, products, requestedOptionMap);
-        orderItemRepository.saveAll(orderItems);
+        // 7. 주문 항목 생성 및 저장
+        List<OrderItem> orderItemEntities = createOrderItems(savedOrder, products, orderItems);
+        orderItemRepository.saveAll(orderItemEntities);
 
         return Output.from(savedOrder);
     }
@@ -150,11 +151,15 @@ public class CreateOrderUseCase {
      * OrderItem 목록을 생성합니다.
      */
     private List<OrderItem> createOrderItems(Order savedOrder, List<Product> products,
-                                              Map<Long, OrderService.RequestedOption> requestedOptionMap) {
-        return products.stream()
+                                             List<OrderService.OrderItemInfo> orderItems) {
+        // ProductOption Map 생성 (빠른 조회)
+        Map<Long, ProductOption> optionMap = products.stream()
                 .flatMap(product -> product.getOptions().stream())
-                .map(productOption -> {
-                    OrderService.RequestedOption item = requestedOptionMap.get(productOption.getId());
+                .collect(Collectors.toMap(ProductOption::getId, Function.identity()));
+
+        return orderItems.stream()
+                .map(item -> {
+                    ProductOption productOption = optionMap.get(item.productOptionId());
                     return OrderItem.create(
                             savedOrder,
                             productOption.getProduct(),

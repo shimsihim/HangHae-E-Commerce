@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,4 +16,7 @@ public interface CouponRepository extends JpaRepository<Coupon, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Coupon> findForPessimisticById(Long id);
+
+    @Query("SELECT uc.coupon FROM UserCoupon uc WHERE uc.id = :userCouponId ")
+    Optional<Coupon> findCouponWithUserCoupon(Long userCouponId);
 }

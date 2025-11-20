@@ -2,6 +2,7 @@ package io.hhplus.tdd.domain.order.application;
 
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.order.domain.model.Order;
+import io.hhplus.tdd.domain.order.domain.model.OrderItem;
 import io.hhplus.tdd.domain.order.domain.service.OrderService;
 import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderItemRepository;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -44,25 +44,20 @@ public class CancelOrderUseCase {
         orderService.cancelOrder(order);
 
         // 3. 주문 항목 조회
-        var orderItems = orderItemRepository.findByOrderId(order.getId());
+        List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
 
-        // 4. 재고 복구를 위한 맵 생성
-        Map<Long, OrderService.RequestedOption> requestedOptionMap = orderItems.stream()
-                .collect(Collectors.toMap(
-                        orderItem -> orderItem.getProductOptionId(),
-                        orderItem -> new OrderService.RequestedOption(
-                                orderItem.getProductOptionId(),
-                                orderItem.getQuantity()
-                        )
-                ));
+        // 4. OrderItem을 OrderItemInfo 리스트로 변환
+        List<OrderService.OrderItemInfo> orderItemInfos = orderItems.stream()
+                .map(item -> new OrderService.OrderItemInfo(item.getProductOptionId(), item.getQuantity()))
+                .collect(Collectors.toList());
 
         // 5. 상품 조회
-        List<Long> optionIds = orderItems.stream()
-                .map(item -> item.getProductOptionId())
+        List<Long> optionIds = orderItemInfos.stream()
+                .map(OrderService.OrderItemInfo::productOptionId)
                 .toList();
         List<Product> products = productRepository.findProductsWithOptions(optionIds);
 
         // 6. 재고 복구 (Domain Service)
-        orderService.releaseStock(products, requestedOptionMap);
+        orderService.restoreStock(products, orderItemInfos);
     }
 }
