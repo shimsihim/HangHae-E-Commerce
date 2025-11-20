@@ -38,6 +38,9 @@ public class UserCoupon extends CreatedBaseEntity {
     @Column(nullable = false)
     private LocalDate expiredAt;
 
+    @Version
+    private Long version;
+
     public static UserCoupon from(long userId , Coupon coupon){
         return UserCoupon.builder()
                 .userId(userId)

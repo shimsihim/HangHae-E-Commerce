@@ -63,7 +63,7 @@ public class Order extends CreatedBaseEntity {
     private LocalDateTime paidAt;
 
     @Version
-    private long version;
+    private Long version;
 
 
     //주문 생성
