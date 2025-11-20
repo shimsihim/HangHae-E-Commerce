@@ -39,7 +39,7 @@ public class CancelOrderUseCase {
 
     @Transactional
     public void execute(Input input) {
-        // 1. 주문 조회
+        // 1. 주문 조회 , 낙관란
         Order order = orderRepository.findById(input.orderId())
                 .orElseThrow(() -> new OrderException(ErrorCode.ORDER_NOT_FOUND, input.orderId()));
 
@@ -54,11 +54,11 @@ public class CancelOrderUseCase {
                 .map(item -> new OrderService.OrderItemInfo(item.getProductOptionId(), item.getQuantity()))
                 .collect(Collectors.toList());
 
-        // 5. 상품 조회 , 비관락 필요하지 않을까?
+        // 5. 상품 조회 , 비관 락
         List<Long> optionIds = orderItemInfos.stream()
                 .map(OrderService.OrderItemInfo::productOptionId)
                 .toList();
-        List<ProductOption> productOptions = productOptionRepository.findAllById(optionIds);
+        List<ProductOption> productOptions = productOptionRepository.findAllByIdInForUpdate(optionIds);
 
         // 6. 재고 복구 (Domain Service)
         orderService.restoreStock(productOptions, orderItemInfos);
