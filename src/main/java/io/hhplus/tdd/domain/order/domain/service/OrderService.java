@@ -71,12 +71,11 @@ public class OrderService {
     /**
      * 재고를 차감합니다 (결제 완료 시점에 호출)
      *
-     * @param products 재고 차감할 상품 목록
+     * @param productOptions 재고 차감할 상품옵션 목록
      * @param orderItems 주문 항목 목록
      */
-    public void deductStock(List<Product> products, List<OrderItemInfo> orderItems) {
-        Map<Long, ProductOption> optionMap = products.stream()
-                .flatMap(product -> product.getOptions().stream())
+    public void deductStock(List<ProductOption> productOptions, List<OrderItemInfo> orderItems) {
+        Map<Long, ProductOption> optionMap = productOptions.stream()
                 .collect(Collectors.toMap(ProductOption::getId, Function.identity()));
 
         for (OrderItemInfo item : orderItems) {
@@ -90,12 +89,11 @@ public class OrderService {
     /**
      * 재고를 복구합니다 (주문 취소, 결제 실패 시)
      *
-     * @param products 재고 복구할 상품 목록
+     * @param productOptions 재고 복구할 상품옵션 목록
      * @param orderItems 주문 항목 목록
      */
-    public void restoreStock(List<Product> products, List<OrderItemInfo> orderItems) {
-        Map<Long, ProductOption> optionMap = products.stream()
-                .flatMap(product -> product.getOptions().stream())
+    public void restoreStock(List<ProductOption> productOptions, List<OrderItemInfo> orderItems) {
+        Map<Long, ProductOption> optionMap = productOptions.stream()
                 .collect(Collectors.toMap(ProductOption::getId, Function.identity()));
 
         for (OrderItemInfo item : orderItems) {
@@ -107,31 +105,6 @@ public class OrderService {
     }
 
     /**
-     * 즉시 완료 주문 처리 (finalAmount가 0원인 경우)
-     * - 재고 차감
-     * - 포인트 차감
-     * - 쿠폰 사용
-     * - 주문 상태 PAID 변경
-     *
-     * @param order 주문 엔티티
-     * @param products 상품 목록
-     * @param orderItems 주문 항목 목록
-     */
-    public void completeImmediateOrder(Order order, List<Product> products, List<OrderItemInfo> orderItems) {
-        // 1. 재고 차감
-        deductStock(products, orderItems);
-
-        // 2. 포인트 차감
-        processPointDeduction(order);
-
-        // 3. 쿠폰 사용
-        processCouponUsage(order);
-
-        // 4. 주문 완료 처리
-        order.completeOrder();
-    }
-
-    /**
      * PG 결제 완료 후 주문 완료 처리
      * - 재고 차감
      * - 포인트 차감
@@ -139,12 +112,12 @@ public class OrderService {
      * - 주문 상태 PAID 변경
      *
      * @param order 주문 엔티티
-     * @param products 상품 목록
+     * @param productOptions 상품 목록
      * @param orderItems 주문 항목 목록
      */
-    public void completeOrderWithPayment(Order order, List<Product> products, List<OrderItemInfo> orderItems) {
+    public void completeOrderWithPayment(Order order, List<ProductOption> productOptions, List<OrderItemInfo> orderItems) {
         // 1. 재고 차감
-        deductStock(products, orderItems);
+        deductStock(productOptions, orderItems);
 
         // 2. 포인트 차감
         processPointDeduction(order);

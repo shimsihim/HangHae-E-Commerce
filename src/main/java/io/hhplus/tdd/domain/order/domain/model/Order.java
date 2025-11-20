@@ -62,6 +62,9 @@ public class Order extends CreatedBaseEntity {
     @Setter
     private LocalDateTime paidAt;
 
+    @Version
+    private long version;
+
 
     //주문 생성
     public static Order createOrder(UserPoint userPoint, UserCoupon userCoupon, long totalAmount,

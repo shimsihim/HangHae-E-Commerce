@@ -13,19 +13,11 @@ import java.util.Optional;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-/*    @Query("SELECT new io.hhplus.tdd.domain.product.infrastructure.repository.ProductSalesDto(p, SUM(oi.quantity)) " +
+    @Query("SELECT new io.hhplus.tdd.domain.product.infrastructure.repository.ProductSalesDto(p, SUM(oi.quantity)) " +
             "FROM Product p, OrderItem oi " +
             "WHERE oi.productId = p.id " +
             "  AND oi.createdAt >= :threeDaysAgo " + // 파라미터 사용
             "GROUP BY p.id ORDER BY SUM(oi.quantity) DESC")
-    List<ProductSalesDto> findPopular(@Param("threeDaysAgo") LocalDateTime threeDaysAgo);*/
-
-    @Query("SELECT p FROM Product p JOIN FETCH p.options po WHERE po.id IN :optionIds")
-    List<Product> findProductsWithOptions(@Param("optionIds") List<Long> optionIds);
-
-    @Query("SELECT p FROM Product p JOIN FETCH p.options po WHERE po.id IN :optionIds")
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    List<Product> findProductsWithOptionsForUpdate(@Param("optionIds") List<Long> optionIds);
-
+    List<ProductSalesDto> findPopular(@Param("threeDaysAgo") LocalDateTime threeDaysAgo);
 
 }

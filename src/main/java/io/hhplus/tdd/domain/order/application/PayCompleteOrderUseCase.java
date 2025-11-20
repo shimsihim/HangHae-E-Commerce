@@ -8,7 +8,8 @@ import io.hhplus.tdd.domain.order.domain.service.OrderService;
 import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderItemRepository;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderRepository;
-import io.hhplus.tdd.domain.product.domain.model.Product;
+import io.hhplus.tdd.domain.product.domain.model.ProductOption;
+import io.hhplus.tdd.domain.product.infrastructure.repository.ProductOptionRepository;
 import io.hhplus.tdd.domain.product.infrastructure.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class PayCompleteOrderUseCase {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final OrderService orderService;
+    private final ProductOptionRepository productOptionRepository;
 
     public record Input(
             long orderId
@@ -59,12 +61,12 @@ public class PayCompleteOrderUseCase {
                 .collect(Collectors.toList());
 
         // 5. 상품 및 옵션 조회 (Pessimistic Lock)
-        List<Long> optionIds = orderItemInfos.stream()
-                .map(OrderService.OrderItemInfo::productOptionId)
+        List<Long> optionIds = orderItems.stream()
+                .map(orderItem -> orderItem.getProductOptionId())
                 .toList();
-        List<Product> products = productRepository.findProductsWithOptionsForUpdate(optionIds);
+        List<ProductOption> productOptions = productOptionRepository.findAllByIdInForUpdate(optionIds);
 
         // 6. 결제 완료 처리 (재고 차감, 포인트 차감, 쿠폰 사용, 상태 변경)
-        orderService.completeOrderWithPayment(order, products, orderItemInfos);
+        orderService.completeOrderWithPayment(order, productOptions, orderItemInfos);
     }
 }

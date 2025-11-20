@@ -8,6 +8,8 @@ import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderItemRepository;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderRepository;
 import io.hhplus.tdd.domain.product.domain.model.Product;
+import io.hhplus.tdd.domain.product.domain.model.ProductOption;
+import io.hhplus.tdd.domain.product.infrastructure.repository.ProductOptionRepository;
 import io.hhplus.tdd.domain.product.infrastructure.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class CancelOrderUseCase {
     private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
     private final OrderService orderService;
+    private final ProductOptionRepository productOptionRepository;
 
     public record Input(
             long orderId
@@ -51,13 +54,13 @@ public class CancelOrderUseCase {
                 .map(item -> new OrderService.OrderItemInfo(item.getProductOptionId(), item.getQuantity()))
                 .collect(Collectors.toList());
 
-        // 5. 상품 조회
+        // 5. 상품 조회 , 비관락 필요하지 않을까?
         List<Long> optionIds = orderItemInfos.stream()
                 .map(OrderService.OrderItemInfo::productOptionId)
                 .toList();
-        List<Product> products = productRepository.findProductsWithOptions(optionIds);
+        List<ProductOption> productOptions = productOptionRepository.findAllById(optionIds);
 
         // 6. 재고 복구 (Domain Service)
-        orderService.restoreStock(products, orderItemInfos);
+        orderService.restoreStock(productOptions, orderItemInfos);
     }
 }
