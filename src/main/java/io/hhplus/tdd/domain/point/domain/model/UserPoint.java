@@ -24,12 +24,11 @@ public class UserPoint extends UpdatableBaseEntity{
     @Version
     private Long version;
 
-
-
-    private static final long MAX_POINT = 1_000_000_000L;
-    private static final long MIN_CHARGE_AMOUNT = 1_000L;
-    private static final long MAX_CHARGE_AMOUNT = 500_000L;
-    private static final long MIN_USE_AMOUNT = 100L;
+    // 비즈니스 정책 상수
+    private static final long MAX_POINT = 1_000_000_000L;  // 요구사항: 최대 보유 포인트
+    private static final long MIN_CHARGE_AMOUNT = 1_000L;   // 비즈니스 정책: 최소 충전 단위 (1,000원)
+    private static final long MAX_CHARGE_AMOUNT = 500_000L; // 요구사항: 1회 최대 충전 금액 (500,000원)
+    private static final long MIN_USE_AMOUNT = 100L;        // 비즈니스 정책: 최소 사용 단위 (100원)
 
 
     public void chargePoint(long chargePoint){
@@ -53,9 +52,12 @@ public class UserPoint extends UpdatableBaseEntity{
     }
 
     public void usePoint(long usePoint){
-        if(usePoint < 0) throw new PointRangeException(ErrorCode.USER_POINT_MUST_POSITIVE , this.id , usePoint);
+        long newPoint = validUsePoint(usePoint);
+        this.balance = newPoint;
+    }
 
-        if(usePoint < MIN_USE_AMOUNT) throw new PointRangeException(ErrorCode.USER_POINT_USE_MIN_AMOUNT , this.id , usePoint);
+    public long validUsePoint(long usePoint){
+        if(usePoint < 0) throw new PointRangeException(ErrorCode.USER_POINT_MUST_POSITIVE , this.id , usePoint);
 
         long newPoint;
         try{
@@ -65,6 +67,6 @@ public class UserPoint extends UpdatableBaseEntity{
         catch(ArithmeticException e){
             throw new PointRangeException(ErrorCode.USER_POINT_OVERFLOW ,this.id , this.balance , usePoint );
         }
-        this.balance = newPoint;
+        return newPoint;
     }
 }
