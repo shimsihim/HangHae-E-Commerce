@@ -17,7 +17,7 @@ public class ProductOption {
     @Setter //인메모리이므로 id 값의 증가를 위해서
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)  // FK
     private Product product;
 
@@ -34,22 +34,32 @@ public class ProductOption {
     private Long quantity;
 
 
-    // 재고 차감 검증 O
-    public void deduct(long quantity){
-        if(this.quantity < quantity){
+    /**
+     * 재고 충분 여부 검증 (차감하지 않음)
+     * 주문 생성 시 검증용
+     */
+    public long validateStock(int requestQuantity){
+        if(this.quantity < requestQuantity){
             throw new ProductException(ErrorCode.PRODUCT_NOT_ENOUGH , this.productId , this.id);
         }
+        return this.getPrice() * requestQuantity;
+    }
+
+    /**
+     * 재고 차감 (결제 완료 시)
+     */
+    public void deduct(int quantity){
+        validateStock(quantity);
         this.quantity -= quantity;
     }
 
-
-//  재고 차감 검증 X
-    public void deductWithoutValidation(long quantity){
-        this.quantity -= quantity;
-    }
-
-    // 재고 복구
-    public void restore(long originalQuantity){
-        this.quantity = originalQuantity;
+    /**
+     * 재고 복구 (주문 취소, 결제 실패 시)
+     */
+    public void restore(int quantity){
+        if(quantity < 0){
+            throw new IllegalArgumentException("복구 수량은 양수여야 합니다.");
+        }
+        this.quantity += quantity;
     }
 }
