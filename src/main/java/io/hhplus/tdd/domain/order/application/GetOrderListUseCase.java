@@ -27,9 +27,9 @@ public class GetOrderListUseCase {
 
     @Transactional(readOnly = true)
     public List<OrderInfo> execute(Input input){
-        List<Order> orders = orderRepository.findByUserId(input.userId);
+        List<Order> orders = orderRepository.findAllWithItemsByUserId(input.userId);
         List<OrderInfo> orderInfos = orders.stream().map(order ->{
-            List<OrderItemInfo> orderItems = orderItemRepository.findByOrderId(order.getId()).stream().map(OrderItemInfo::from).toList();
+            List<OrderItemInfo> orderItems = order.getOrderItems().stream().map(OrderItemInfo :: from).toList();
             if(orderItems.isEmpty()){
                 log.warn("No orderItem found for orderId={}",order.getId());
             }

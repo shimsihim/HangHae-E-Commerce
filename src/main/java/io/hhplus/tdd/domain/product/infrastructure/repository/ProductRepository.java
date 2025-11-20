@@ -20,4 +20,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "GROUP BY p.id ORDER BY SUM(oi.quantity) DESC")
     List<ProductSalesDto> findPopular(@Param("threeDaysAgo") LocalDateTime threeDaysAgo);
 
+    @Query("SELECT p FROM Product p JOIN FETCH p.options WHERE p.id = :id")
+    Optional<Product> findWithOptionsById(Long id);
+
 }

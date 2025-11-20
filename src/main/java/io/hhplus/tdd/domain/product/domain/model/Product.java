@@ -15,7 +15,6 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Setter //인메모리이므로 id 값의 증가를 위해서
     private Long id;
 
     @OneToMany(mappedBy = "product" , fetch = FetchType.LAZY)
