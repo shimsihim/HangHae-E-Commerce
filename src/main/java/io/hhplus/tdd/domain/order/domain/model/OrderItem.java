@@ -17,22 +17,22 @@ public class OrderItem extends CreatedBaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)  // FK
     private Order order;
+
 
     @Column(name = "order_id", insertable = false, updatable = false) // 단순 조회용
     private Long orderId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)  // FK
     private Product product;
 
     @Column(name = "product_id", insertable = false, updatable = false) // 단순 조회용
     private Long productId;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_option_id", nullable = false)  // FK
     private ProductOption productOption;
 

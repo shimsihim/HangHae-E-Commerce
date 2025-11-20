@@ -15,7 +15,7 @@ public class PointHistory extends CreatedBaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch =  FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)  // FK
     private UserPoint userPoint;
 

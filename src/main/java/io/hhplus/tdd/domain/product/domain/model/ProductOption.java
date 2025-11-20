@@ -17,7 +17,7 @@ public class ProductOption {
     @Setter //인메모리이므로 id 값의 증가를 위해서
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)  // FK
     private Product product;
 

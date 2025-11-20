@@ -7,8 +7,10 @@ import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.mapping.ToOne;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -24,14 +26,14 @@ public class Order extends CreatedBaseEntity {
     private Long id;
 
     @JoinColumn(name = "user_id", nullable = false)
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private UserPoint userPoint;
 
     @Column(name = "user_id", insertable = false, updatable = false) // 단순 조회용
     private Long userId;
 
     @JoinColumn(name = "user_coupon_id")
-    @ManyToOne
+    @OneToOne(fetch = FetchType.LAZY)
     private UserCoupon userCoupon;
 
     @Column(name = "user_coupon_id", insertable = false, updatable = false) // 단순 조회용
@@ -41,6 +43,9 @@ public class Order extends CreatedBaseEntity {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
+
+    @OneToMany(mappedBy = "order" , fetch = FetchType.LAZY)
+    private List<OrderItem> orderItems;
 
     @Column(nullable = false)
     private Long totalAmount;
