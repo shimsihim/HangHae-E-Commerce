@@ -65,10 +65,10 @@ public class GetProductDetailUseCase {
     public Output execute(Input input){
         Long productId = input.id;
 
-        Product product = productRepository.findById(productId).orElseThrow(
+        Product product = productRepository.findWithOptionsById(productId).orElseThrow(
                 ()-> new ProductException(ErrorCode.PRODUCT_NOT_FOUND , productId)
         );
-        List<ProductOption> optionList = productOptionRepository.findByProductId(productId);
+        List<ProductOption> optionList = product.getOptions();
         if (optionList.isEmpty()){
             throw new ProductException(ErrorCode.PRODUCT_NOT_FOUND , productId);
         }

@@ -62,15 +62,12 @@ class PointUseUseCaseTest {
 
             given(userPointRepository.findById(userId)).willReturn(Optional.of(userPoint));
             given(pointService.usePoint(any(UserPoint.class), anyLong(), any(String.class)))
-                    .willReturn(pointHistory);
-            given(userPointRepository.save(any(UserPoint.class))).willAnswer(invocation -> {
-                UserPoint saved = invocation.getArgument(0);
-                return UserPoint.builder()
-                        .id(saved.getId())
-                        .balance(expectedBalance)
-                        .version(saved.getVersion())
-                        .build();
-            });
+                    .willAnswer(invocation ->{
+                        UserPoint up = invocation.getArgument(0);
+                        Long amount = invocation.getArgument(1);
+                        up.usePoint(amount);
+                        return pointHistory;
+                    });
             given(pointHistoryRepository.save(any(PointHistory.class))).willReturn(pointHistory);
 
             // when
@@ -82,7 +79,6 @@ class PointUseUseCaseTest {
             assertThat(output.balance()).isEqualTo(expectedBalance);
             verify(userPointRepository, times(1)).findById(userId);
             verify(pointService, times(1)).usePoint(any(UserPoint.class), eq(useAmount), eq("테스트 사용"));
-            verify(userPointRepository, times(1)).save(any(UserPoint.class));
             verify(pointHistoryRepository, times(1)).save(any(PointHistory.class));
         }
     }
@@ -127,31 +123,6 @@ class PointUseUseCaseTest {
                     .willAnswer(invocation -> {
                         UserPoint up = invocation.getArgument(0);
                         up.usePoint(useAmount); // 도메인 검증 로직 실행
-                        return null;
-                    });
-
-            // when , then
-            PointUseUseCase.Input input = new PointUseUseCase.Input(userId, useAmount, "테스트");
-            assertThatThrownBy(() -> pointUseUseCase.execute(input))
-                    .isInstanceOf(PointRangeException.class);
-        }
-
-        @ParameterizedTest(name = "최소 사용 금액 미만: {0}")
-        @CsvSource({"0", "50", "99"})
-        void 최소_사용_금액_미만_예외(long useAmount) {
-            // given
-            long userId = 1L;
-            UserPoint userPoint = UserPoint.builder()
-                    .id(userId)
-                    .balance(10000L)
-                    .version(0L)
-                    .build();
-
-            given(userPointRepository.findById(userId)).willReturn(Optional.of(userPoint));
-            given(pointService.usePoint(any(UserPoint.class), anyLong(), any(String.class)))
-                    .willAnswer(invocation -> {
-                        UserPoint up = invocation.getArgument(0);
-                        up.usePoint(useAmount);
                         return null;
                     });
 

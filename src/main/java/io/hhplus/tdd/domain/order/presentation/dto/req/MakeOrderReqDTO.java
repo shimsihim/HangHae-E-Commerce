@@ -11,10 +11,8 @@ public record MakeOrderReqDTO(
 ) {
 
     public record ItemInfo(
-            Long productId,
             Long productOptionId,
-            Long quantity
+            int quantity
     ){
-
     }
 }

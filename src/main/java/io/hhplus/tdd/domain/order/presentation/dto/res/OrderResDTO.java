@@ -41,7 +41,7 @@ public record OrderResDTO(
                     .build();
         }
 
-        public static OrderResDTO from(io.hhplus.tdd.domain.order.application.MakeOrderUseCase.Output output){
+        public static OrderResDTO from(io.hhplus.tdd.domain.order.application.CreateOrderUseCase.Output output){
             return OrderResDTO.builder()
                     .id(output.orderId())
                     .userId(output.userId())
@@ -60,8 +60,7 @@ public record OrderResDTO(
                 Long orderId,
                 Long productOptionId,
                 int quantity,
-                Long unitPrice,
-                Long subTotal
+                Long unitPrice
         ){
             public static OrderItemResDTO from(GetOrderListUseCase.OrderItemInfo orderItem){
                 return OrderItemResDTO.builder()
@@ -71,7 +70,6 @@ public record OrderResDTO(
                         .productOptionId(orderItem.productOptionId())
                         .quantity(orderItem.quantity())
                         .unitPrice(orderItem.unitPrice())
-                        .subTotal(orderItem.subTotal())
                         .build();
             }
 

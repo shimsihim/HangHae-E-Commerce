@@ -13,6 +13,10 @@ public class ProductException extends BusinessException {
         super(errorCode , productId );
     }
 
+    public ProductException(ErrorCode errorCode , String productIds ) {
+        super(errorCode , productIds );
+    }
+
     public ProductException(ErrorCode errorCode , long productId  , long productOptionId) {
         super(errorCode , productId  , productOptionId);
     }

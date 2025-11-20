@@ -1,49 +1,75 @@
-## 서비스의 병목 예상 쿼리
+## 동시성 문제
 
-### 인기 상품 조회
+### 기존 동시성 문제 발생 가능한 UseCase
+1. 쿠폰 발급
+2. 결제(주문 완료)
+3. 포인트 충전 및 사용
+4. 주문 취소
 
-``` java
-    @Query("SELECT new io.hhplus.tdd.domain.product.infrastructure.repository.ProductSalesDto(p, SUM(oi.quantity)) " +
-            "FROM Product p, OrderItem oi " +
-            "WHERE oi.productId = p.id " +
-            "  AND oi.createdAt >= :threeDaysAgo " + // 파라미터 사용
-            "GROUP BY p.id ORDER BY SUM(oi.quantity) DESC")
-    List<ProductSalesDto> findPopular(@Param("threeDaysAgo") LocalDateTime threeDaysAgo);
-    
+
+### 1. 쿠폰 발급
+쿠폰 발급의 경우 한정된 쿠폰에 다양한 사용자들이 발급하게됩니다.  
+<b>조건 :</b>   
+1종류의 쿠폰  
+쿠폰 재고 100개  
+요청 인원 1000명  
+낙관락(리트라이 예시)을 사용할 경우  
+<b>예시 :</b>   
+1번째 요청에 1명의 사용자만 쿠폰을 발급받고 나머지 999명 재시도   
+2번째 요청에 1명의 사용자만 쿠폰을 발급받고 나머지 998명 재시도  
+3번째 요청에 1명의 사용자만 쿠폰을 발급받고 나머지 997명 재시도  
+4번째 요청에 1명의 사용자만 쿠폰을 발급받고 나머지 996명 재시도     
+....  
+100번째 요청에 1명의 사용자만 쿠폰을 발급받고 나머지 900명 대기 
+ 
+
+ 해당 경우에는 비관적 락이 맞겠다고 결론을 내렸습니다.
+
+```java
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<Coupon> findForPessimisticById(Long id);
 ```
 
-``` mysql
-explain    SELECT
-        PRODUCT.ID,
-        PRODUCT.BASE_PRICE,
-        PRODUCT.DESCRIPTION,
-        PRODUCT.NAME,
-        SUM(ORDER_ITEM.QUANTITY) 
-    FROM
-        PRODUCT,
-        ORDER_ITEM 
-    WHERE
-        ORDER_ITEM.PRODUCT_ID=PRODUCT.ID 
-        AND ORDER_ITEM.CREATED_AT>='2025-11-11T01:37:53.831' 
-    GROUP BY
-        PRODUCT.ID 
-    ORDER BY
-        SUM(ORDER_ITEM.QUANTITY) DESC
+### 2. 결제(주문 완료)
+주문 완료 시 재고 차감이 발생하며, 동일한 상품에 대해 여러 사용자가 동시에 주문할 수 있습니다.
+이 과정에서 사용자의 포인트와 사용자의 쿠폰 사용 처리가 이뤄집니다.
+<b>조건 :</b>
+상품 재고 10개
+동시 주문 요청 50명
+
+낙관락을 사용할 경우 상품 재고 수정으로 인하여 대부분의 요청이 실패할 가능성이 높습니다.
+하지만 재고가 있는 한 요청이 실패하여서는 안된다고 판단하여 비관적 락을 적용하였습니다.
+
+```java
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<ProductOption> findForPessimisticById(Long id);
+```
+결제 처리 시 사용자의 포인트와 사용자의 쿠폰을 사용 처리합니다.  
+해당 과정은 상품옵션과 달리 동시에 요청이 올 가능성도 적고 , 같은 사용자 포인트의 동시 변경 , 같은 사용자 쿠폰의 동시 변경은 잘못된 케이스라 판단하여 
+Retry없는 낙관적 락을 사용하였습니다.
+
+
+### 3. 포인트 충전 및 사용
+동일 사용자에 대한 포인트 충전 및 사용의  동시 요청은    
+잘못된 케이스라 판단하였습니다.
+이에 따라 포인트 엔티티에 낙관적 락을 적용하여, 이후의 요청이 실패하도록 하였습니다.
+<b>조건 :</b>
+1명의 사용자
+동시 포인트 사용 요청 10건
+
+```java
+    @Version
+    private Long version;
 ```
 
-![explain 결과](/img/explain.png)
+### 4. 주문 취소
+주문 취소 시 포인트 환불, 재고 복구, 쿠폰 복구 등이 발생합니다.  
+동일한 주문에 대해서 동시에 주문 취소요청이 오는 상황 자체가 잘못된 케이스라 판단하여  
+주문 엔티티에 낙관적 락을 적용하였습니다.  
 
-### 병목지점
-+ ORDER_ITEM 테이블의 경우 Full Table Scan
-
-### 조치사항 : 인덱스 추가
-```sql
-CREATE INDEX idx_oi_product_created_quantity 
-ON ORDER_ITEM (PRODUCT_ID, CREATED_AT, QUANTITY);
+```java
+    @Version
+    private Long version;
 ```
-
-### 결과
-![explain 결과](/img/explain2.png)
-
 
 

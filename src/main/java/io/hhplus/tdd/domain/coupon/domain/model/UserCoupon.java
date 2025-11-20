@@ -38,6 +38,9 @@ public class UserCoupon extends CreatedBaseEntity {
     @Column(nullable = false)
     private LocalDate expiredAt;
 
+    @Version
+    private Long version;
+
     public static UserCoupon from(long userId , Coupon coupon){
         return UserCoupon.builder()
                 .userId(userId)
@@ -49,12 +52,21 @@ public class UserCoupon extends CreatedBaseEntity {
     }
 
     public void useCoupon(){
+        validUseCoupon();
+        this.status = Status.USED;
+        this.usedAt = LocalDate.now();
+    }
+
+    public void restoreCoupon(){
+        this.status = Status.ISSUED;
+    }
+
+    public void validUseCoupon(){
         if (LocalDate.now().isAfter(this.getExpiredAt()) || this.status.equals(Status.EXPIRED)) {
             throw new CouponException(ErrorCode.COUPON_USER_EXPIRED, this.getId());
         }
         if (this.status.equals(Status.USED)) {
             throw new CouponException(ErrorCode.COUPON_USER_USED, this.getId());
         }
-        this.status = Status.USED;
     }
 }

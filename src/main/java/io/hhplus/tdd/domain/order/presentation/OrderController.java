@@ -1,16 +1,13 @@
 package io.hhplus.tdd.domain.order.presentation;
 
 
+import io.hhplus.tdd.domain.order.application.CreateOrderUseCase;
 import io.hhplus.tdd.domain.order.application.GetOrderListUseCase;
-import io.hhplus.tdd.domain.order.application.MakeOrderUseCase;
-import io.hhplus.tdd.domain.order.presentation.dto.req.GetOrderListReqDTO;
+import io.hhplus.tdd.domain.order.application.PayCompleteOrderUseCase;
 import io.hhplus.tdd.domain.order.presentation.dto.req.MakeOrderReqDTO;
+import io.hhplus.tdd.domain.order.presentation.dto.req.PayOrderReqDTO;
 import io.hhplus.tdd.domain.order.presentation.dto.res.OrderResDTO;
-import io.hhplus.tdd.domain.product.application.GetProductDetailUseCase;
-import io.hhplus.tdd.domain.product.application.GetProductListUseCase;
-import io.hhplus.tdd.domain.product.presentation.dto.res.ProductDetailResDTO;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +22,8 @@ import java.util.List;
 public class OrderController {
 
     private final GetOrderListUseCase getOrderListUseCase;
-    private final MakeOrderUseCase makeOrderUseCase;
+    private final CreateOrderUseCase createOrderUseCase;
+    private final PayCompleteOrderUseCase payCompleteOrderUseCase;
 
     @GetMapping("/{userId}") // 주문 내역 조회
     public List<OrderResDTO> getOrderList(@PathVariable Long userId) {
@@ -36,11 +34,14 @@ public class OrderController {
 
     @PostMapping() // 주문 요청
     public OrderResDTO makeOrder(@RequestBody MakeOrderReqDTO makeOrderReqDTO) {
-        List<MakeOrderUseCase.Input.ItemInfo> items = makeOrderReqDTO.items().stream().map(item -> MakeOrderUseCase.Input.ItemInfo.of(item.productId(), item.productOptionId(),item.quantity())).toList();
-        MakeOrderUseCase.Input input = MakeOrderUseCase.Input.of(makeOrderReqDTO.userId(), items , makeOrderReqDTO.userCouponId() , makeOrderReqDTO.usePointAmount());
-        MakeOrderUseCase.Output output = makeOrderUseCase.execute(input);
+        List<CreateOrderUseCase.Input.ProductInfo> items = makeOrderReqDTO.items().stream().map(item -> new CreateOrderUseCase.Input.ProductInfo(item.productOptionId(),item.quantity())).toList();
+        CreateOrderUseCase.Input input = new CreateOrderUseCase.Input(makeOrderReqDTO.userId(), items , makeOrderReqDTO.userCouponId() , makeOrderReqDTO.usePointAmount());
+        CreateOrderUseCase.Output output = createOrderUseCase.execute(input);
         return OrderResDTO.from(output);
     }
 
-
+    @PostMapping("/pay") // 주문 요청
+    public void payOrder(@RequestBody PayOrderReqDTO payOrderReqDTO) {
+        payCompleteOrderUseCase.execute(new PayCompleteOrderUseCase.Input(payOrderReqDTO.orderId()));
+    }
 }
