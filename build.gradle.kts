@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.spring.boot.starter.jpa)
     implementation(libs.mysql.connector)
     implementation("org.springframework.retry:spring-retry")
+    implementation(libs.spring.boot.starter.redisson)
 
     // Swagger/OpenAPI Documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
@@ -40,6 +41,7 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     annotationProcessor(libs.spring.boot.configuration.processor)
     testImplementation(libs.bundles.testcontainers.mysql)
+    testImplementation(libs.bundles.testcontainers.redis)
     implementation("p6spy:p6spy:3.9.1")
     implementation("com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure:1.9.2")
 }

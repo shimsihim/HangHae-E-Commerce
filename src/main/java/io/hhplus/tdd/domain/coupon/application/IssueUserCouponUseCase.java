@@ -1,5 +1,7 @@
 package io.hhplus.tdd.domain.coupon.application;
 
+import io.hhplus.tdd.common.distributedLock.DistributedLock;
+import io.hhplus.tdd.common.distributedLock.LockGroupType;
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
@@ -33,6 +35,7 @@ public class IssueUserCouponUseCase {
             long userId
     ){}
 
+    @DistributedLock(group = LockGroupType.COUPON ,key = "#input.couponId")
     @Transactional
     public void execute(Input input){
         // 비관락을 걸어서 동일 사용자가 한번에 여러번 쿠폰을 요청하더라도 

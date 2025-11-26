@@ -1,5 +1,7 @@
 package io.hhplus.tdd.domain.order.application;
 
+import io.hhplus.tdd.common.distributedLock.DistributedLock;
+import io.hhplus.tdd.common.distributedLock.LockGroupType;
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.domain.model.OrderItem;
@@ -38,6 +40,7 @@ public class PayCompleteOrderUseCase {
             long orderId
     ){}
 
+    @DistributedLock(group = LockGroupType.PRODUCT_OPTION ,key = "#input.couponId")
     @Transactional
     public void execute(Input input){
         // 1. 주문 조회

@@ -1,3 +1,7 @@
+# 테스트 기본 설정 (Testcontainers 사용)
+# - BaseIntegrationTest를 상속받은 테스트는 자동으로 Docker 컨테이너로 MySQL/Redis를 실행합니다
+# - 로컬 인프라 사용 시: LocalIntegrationTest를 상속받거나 application-local.yml 사용
+
 spring:
   application.name: hhplus-e-commerce
 
@@ -16,6 +20,11 @@ spring:
           auto: create
     jpa-auditing:
       enabled: true
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
 
 decorator:
   datasource:

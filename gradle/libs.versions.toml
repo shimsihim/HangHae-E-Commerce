@@ -40,12 +40,15 @@ spring_boot_starter_test = { module = "org.springframework.boot:spring-boot-star
 spring_boot_starter_validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring_boot_starter_aop = { module = "org.springframework.boot:spring-boot-starter-aop" }
 spring_boot_starter_jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring_boot_starter_redisson = { module = "org.redisson:redisson-spring-boot-starter" ,version.ref = "redisson" }
+
 
 
 
 spring_boot_testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
 test_containers_junit_jupiter = { module = "org.testcontainers:junit-jupiter" }
 test_containers_mysql = { module = "org.testcontainers:mysql" }
+test_containers_redis = { module = "com.redis:testcontainers-redis", version = "2.2.2" }
 
 fixture_monkey_starter_kotlin = { module = "com.navercorp.fixturemonkey:fixture-monkey-starter-kotlin", version.ref = "fixture_monkey" }
 
@@ -62,3 +65,4 @@ assertj = { module = "org.assertj:assertj-core", version.ref = "assertj" }
 spring_mockk = { module = "com.ninja-squad:springmockk", version.ref = "spring_mockk" }
 [bundles]
 testcontainers_mysql = ["test_containers_mysql", "spring_boot_testcontainers", "test_containers_junit_jupiter","spring_boot_starter_test"]
+testcontainers_redis = ["test_containers_redis"]
