@@ -1,6 +1,6 @@
 package io.hhplus.tdd.domain.order.application;
 
-import io.hhplus.tdd.domain.BaseIntegrationTest;
+import io.hhplus.tdd.domain.IntegrationTest;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import io.hhplus.tdd.domain.coupon.domain.model.Status;
@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
-class CreateOrderIntegrationTest extends BaseIntegrationTest {
+class CreateOrderIntegrationTest extends IntegrationTest {
 
     @Autowired
     private CreateOrderUseCase createOrderUseCase;
