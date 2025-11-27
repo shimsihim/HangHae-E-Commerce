@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.spring.boot.starter.redisson)
     implementation(libs.mysql.connector)
     implementation("org.springframework.retry:spring-retry")
+    implementation("org.springframework.boot:spring-boot-starter-cache")
 
     // Swagger/OpenAPI Documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")

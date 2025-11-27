@@ -1,8 +1,10 @@
 package io.hhplus.tdd.domain.coupon.application;
 
+import io.hhplus.tdd.common.cache.CacheNames;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.infrastructure.repository.CouponRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +47,17 @@ public class GetAllCouponListUseCase {
         }
     }
 
+    /**
+     * 발급 가능한 모든 쿠폰 리스트 조회
+     * 쿠폰 정보는 자주 변경되지 않으므로 TTL 3분 캐싱
+     *
+     * @return 쿠폰 리스트
+     */
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = CacheNames.COUPON_LIST,
+            key = "'all'"
+    )
     public List<Output> execute(){
             return couponRepository.findAll()
                     .stream()

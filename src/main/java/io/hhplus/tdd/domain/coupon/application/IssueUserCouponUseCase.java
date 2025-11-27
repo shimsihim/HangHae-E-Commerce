@@ -1,5 +1,6 @@
 package io.hhplus.tdd.domain.coupon.application;
 
+import io.hhplus.tdd.common.cache.CacheEvictionService;
 import io.hhplus.tdd.common.distributedLock.DistributedLock;
 import io.hhplus.tdd.common.distributedLock.LockGroupType;
 import io.hhplus.tdd.common.exception.ErrorCode;
@@ -29,23 +30,28 @@ public class IssueUserCouponUseCase {
     private final UserCouponRepository userCouponRepository;
     private final CouponRepository couponRepository;
     private final CouponService couponService;
+    private final CacheEvictionService cacheEvictionService;
 
     public record Input(
             long couponId,
             long userId
     ){}
 
+    /**
+     * 쿠폰 발급 후 남은 수량이 0이 되면 쿠폰 리스트 캐시 무효화
+     */
     @DistributedLock(group = LockGroupType.COUPON ,key = "#input.couponId")
     @Transactional
     public void execute(Input input){
-        // 비관락을 걸어서 동일 사용자가 한번에 여러번 쿠폰을 요청하더라도 
-        // 다음 요청은 이전 트랜젝션이 커밋을 완료한 후 쿠폰의 재고 상태 및 사용자의 쿠폰리스트 조회
-        // 리스트의 조회에 대해서 정합성
         Coupon coupon = couponRepository.findForPessimisticById(input.couponId()).orElseThrow(()->{
             throw new CouponException(ErrorCode.COUPON_NOT_FOUND, input.couponId());
         });
         UserCoupon userCoupon = couponService.issueCoupon(coupon, input.userId());
         userCouponRepository.save(userCoupon);
+
+        // 쿠폰 발급 후 남은 수량 확인 (totalQuantity - issuedQuantity)
+        int remainingQuantity = coupon.getTotalQuantity() - coupon.getIssuedQuantity();
+        cacheEvictionService.evictCouponListIfSoldOut(remainingQuantity);
     }
 
 }

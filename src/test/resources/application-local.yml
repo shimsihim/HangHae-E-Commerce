@@ -19,10 +19,11 @@ spring:
       enabled: true
 
   # 로컬 Redis 설정 (직접 설치된 Redis 사용)
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
+  redis:
+    host: 127.0.0.1
+    port: 6379
+  cache:
+    type: redis
 
 decorator:
   datasource:

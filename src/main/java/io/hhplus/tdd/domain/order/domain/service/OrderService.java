@@ -1,5 +1,6 @@
 package io.hhplus.tdd.domain.order.domain.service;
 
+import io.hhplus.tdd.common.cache.CacheEvictionService;
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
@@ -33,6 +34,7 @@ public class OrderService {
     private final PointService pointService;
     private final CouponService couponService;
     private final PointHistoryRepository pointHistoryRepository;
+    private final CacheEvictionService cacheEvictionService;
 
     /**
      * 주문 항목 정보
@@ -70,6 +72,7 @@ public class OrderService {
 
     /**
      * 재고를 차감합니다 (결제 완료 시점에 호출)
+     * 재고 부족 임계값(10개) 미만으로 떨어지면 캐시 무효화
      *
      * @param productOptions 재고 차감할 상품옵션 목록
      * @param orderItems 주문 항목 목록
@@ -82,6 +85,11 @@ public class OrderService {
             ProductOption option = optionMap.get(item.productOptionId());
             if (option != null) {
                 option.deduct(item.quantity());
+
+                // 재고 차감 후 재고가 부족하면 캐시 무효화
+                Long currentStock = option.getQuantity();
+                Long productId = option.getProductId();
+                cacheEvictionService.evictIfLowStock(productId, currentStock);
             }
         }
     }

@@ -22,10 +22,11 @@ spring:
           auto: create
     jpa-auditing:
       enabled: true
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
+  redis:
+    host: 127.0.0.1
+    port: 6379
+  cache:
+    type: redis
 
 decorator:
   datasource:
