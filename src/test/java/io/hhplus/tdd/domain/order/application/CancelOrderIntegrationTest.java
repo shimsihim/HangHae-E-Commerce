@@ -1,6 +1,6 @@
 package io.hhplus.tdd.domain.order.application;
 
-import io.hhplus.tdd.domain.BaseIntegrationTest;
+import io.hhplus.tdd.domain.IntegrationTest;
 import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.domain.model.OrderStatus;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
-class CancelOrderIntegrationTest extends BaseIntegrationTest {
+class CancelOrderIntegrationTest extends IntegrationTest {
 
     @Autowired
     private CancelOrderUseCase cancelOrderUseCase;

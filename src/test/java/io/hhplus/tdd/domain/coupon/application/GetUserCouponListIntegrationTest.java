@@ -1,6 +1,6 @@
 package io.hhplus.tdd.domain.coupon.application;
 
-import io.hhplus.tdd.domain.BaseIntegrationTest;
+import io.hhplus.tdd.domain.IntegrationTest;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import io.hhplus.tdd.domain.coupon.domain.model.Status;
@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class GetUserCouponListIntegrationTest extends BaseIntegrationTest {
+class GetUserCouponListIntegrationTest extends IntegrationTest {
 
     @Autowired
     private GetUserCouponListUseCase getUserCouponListUseCase;
