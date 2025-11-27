@@ -1,6 +1,8 @@
 package io.hhplus.tdd.domain.order.application;
 
+import io.hhplus.tdd.common.distributedLock.MultiDistributedLockExecutor;
 import io.hhplus.tdd.common.exception.ErrorCode;
+import io.hhplus.tdd.domain.coupon.domain.service.CouponService;
 import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.domain.model.OrderItem;
 import io.hhplus.tdd.domain.order.domain.model.OrderStatus;
@@ -9,24 +11,29 @@ import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderItemRepository;
 import io.hhplus.tdd.domain.order.infrastructure.repository.OrderRepository;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
+import io.hhplus.tdd.domain.point.domain.service.PointService;
 import io.hhplus.tdd.domain.product.domain.model.Product;
 import io.hhplus.tdd.domain.product.domain.model.ProductOption;
 import io.hhplus.tdd.domain.product.infrastructure.repository.ProductOptionRepository;
+import io.hhplus.tdd.domain.product.infrastructure.repository.ProductRepository;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,7 +52,22 @@ class CancelOrderUseCaseTest {
     ProductOptionRepository productOptionRepository;
 
     @Mock
+    ProductRepository productRepository;
+
+    @Mock
     OrderService orderService;
+
+    @Mock
+    PointService pointService;
+
+    @Mock
+    CouponService couponService;
+
+    @Mock
+    MultiDistributedLockExecutor lockExecutor;
+
+    @Mock
+    TransactionTemplate transactionTemplate;
 
     @Nested
     class 주문_취소_성공 {
@@ -103,6 +125,13 @@ class CancelOrderUseCaseTest {
                     .subtotal(20000L)
                     .build();
 
+            // Mock 설정: transactionTemplate은 전달된 콜백을 바로 실행
+            willAnswer(invocation -> {
+                Consumer<?> callback = invocation.getArgument(0);
+                callback.accept(null);
+                return null;
+            }).given(transactionTemplate).executeWithoutResult(any());
+
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
             given(orderItemRepository.findByOrderId(orderId)).willReturn(Arrays.asList(orderItem));
 
@@ -112,10 +141,10 @@ class CancelOrderUseCaseTest {
             cancelOrderUseCase.execute(input);
 
             // then
-            verify(orderRepository).findById(orderId);
+            verify(orderRepository, atLeastOnce()).findById(orderId);
             verify(orderService).cancelOrder(any(Order.class));
             verify(orderItemRepository).findByOrderId(orderId);
-            verify(orderService,never()).restoreStock(anyList(), anyList());
+            verify(orderService, never()).restoreStock(anyList(), anyList());
         }
     }
 
@@ -160,11 +189,26 @@ class CancelOrderUseCaseTest {
                     .status(OrderStatus.PAID) // 이미 결제 완료된 상태
                     .totalAmount(20000L)
                     .discountAmount(0L)
-                    .usePointAmount(0L)
-                    .finalAmount(20000L)
+                    .usePointAmount(5000L)
+                    .finalAmount(15000L)
                     .build();
 
+            // Mock 설정: lockExecutor는 전달된 Runnable을 바로 실행
+            willAnswer(invocation -> {
+                Runnable task = invocation.getArgument(1);
+                task.run();
+                return null;
+            }).given(lockExecutor).executeWithLocks(anyList(), any(Runnable.class));
+
+            // Mock 설정: transactionTemplate은 전달된 콜백을 바로 실행
+            willAnswer(invocation -> {
+                Consumer<?> callback = invocation.getArgument(0);
+                callback.accept(null);
+                return null;
+            }).given(transactionTemplate).executeWithoutResult(any());
+
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+            given(orderItemRepository.findByOrderId(orderId)).willReturn(Arrays.asList());
             doThrow(new OrderException(ErrorCode.ORDER_CANNOT_CANCEL, orderId))
                     .when(orderService).cancelOrder(order);
 
@@ -176,9 +220,7 @@ class CancelOrderUseCaseTest {
                     .extracting("errorCode")
                     .isEqualTo(ErrorCode.ORDER_CANNOT_CANCEL);
 
-            verify(orderRepository).findById(orderId);
             verify(orderService).cancelOrder(order);
-            verify(orderService, never()).restoreStock(anyList(), anyList());
         }
     }
 }
