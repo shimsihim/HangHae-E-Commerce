@@ -81,14 +81,11 @@ public class MultiDistributedLockExecutor {
             Thread.currentThread().interrupt();
             throw new RuntimeException("락 획득 중 스레드 인터럽트 발생", e);
         } finally {
-            // MultiLock 해제 (내부적으로 모든 락을 해제)
-            if (multiLock.isLocked() && multiLock.isHeldByCurrentThread()) {
-                try {
-                    log.info("다중 락 해제: {}", uniqueKeys);
-                    multiLock.unlock();
-                } catch (IllegalMonitorStateException e) {
-                    log.warn("다중 락 해제 실패 (이미 해제됨): {}", uniqueKeys);
-                }
+            try {
+                log.info("다중 락 해제: {}", uniqueKeys);
+                multiLock.unlock();
+            } catch (IllegalMonitorStateException e) {
+                log.warn("다중 락 해제 실패 (이미 해제되었거나 현재 스레드가 소유하지 않음): {}", uniqueKeys);
             }
         }
     }
