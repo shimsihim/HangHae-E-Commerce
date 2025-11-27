@@ -26,6 +26,7 @@ dependencies {
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.aop)
     implementation(libs.spring.boot.starter.jpa)
+    implementation(libs.spring.boot.starter.redisson)
     implementation(libs.mysql.connector)
     implementation("org.springframework.retry:spring-retry")
 
