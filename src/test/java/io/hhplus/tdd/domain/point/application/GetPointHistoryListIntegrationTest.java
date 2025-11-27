@@ -1,6 +1,6 @@
 package io.hhplus.tdd.domain.point.application;
 
-import io.hhplus.tdd.domain.BaseIntegrationTest;
+import io.hhplus.tdd.domain.IntegrationTest;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
 import io.hhplus.tdd.domain.point.domain.model.TransactionType;
 import io.hhplus.tdd.domain.point.domain.model.UserPoint;
@@ -14,7 +14,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class GetPointHistoryListIntegrationTest extends BaseIntegrationTest {
+class GetPointHistoryListIntegrationTest extends IntegrationTest {
 
     @Autowired
     private GetPointHistoryListQuery getPointHistoryListQuery;

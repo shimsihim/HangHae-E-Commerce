@@ -2,7 +2,7 @@ package io.hhplus.tdd.domain.coupon.application;
 
 import com.mysql.cj.exceptions.AssertionFailedException;
 import io.hhplus.tdd.common.exception.ErrorCode;
-import io.hhplus.tdd.domain.BaseIntegrationTest;
+import io.hhplus.tdd.domain.IntegrationTest;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import io.hhplus.tdd.domain.coupon.domain.model.Status;
@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Testcontainers
 @Slf4j
-class IssueUserCouponIntegrationTest extends BaseIntegrationTest {
+class IssueUserCouponIntegrationTest extends IntegrationTest {
 
     @Autowired
     private IssueUserCouponUseCase issueUserCouponUseCase;

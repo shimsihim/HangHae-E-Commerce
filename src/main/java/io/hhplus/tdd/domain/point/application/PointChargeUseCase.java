@@ -1,5 +1,7 @@
 package io.hhplus.tdd.domain.point.application;
 
+import io.hhplus.tdd.common.distributedLock.DistributedLock;
+import io.hhplus.tdd.common.distributedLock.LockGroupType;
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.common.exception.UserNotFoundException;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
@@ -37,6 +39,7 @@ public class PointChargeUseCase {
         }
     }
 
+    @DistributedLock(group = LockGroupType.USER_POINT, key = "#input.userId")
     @Transactional
     public Output execute(Input input){
 

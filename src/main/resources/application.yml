@@ -22,8 +22,17 @@ spring:
           auto: create
     jpa-auditing:
       enabled: true
+  redis:
+    host: 127.0.0.1
+    port: 6379
+  cache:
+    type: redis
 
 decorator:
   datasource:
     p6spy:
       enable-logging: true
+
+logging:
+  level:
+    root: DEBUG

@@ -1,5 +1,6 @@
 package io.hhplus.tdd.domain.coupon.application;
 
+import io.hhplus.tdd.common.cache.CacheEvictionService;
 import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
@@ -42,6 +43,9 @@ class IssueUserCouponUseCaseTest {
 
     @Mock
     CouponService couponService;
+
+    @Mock
+    CacheEvictionService cacheEvictionService;
 
     @Captor
     private ArgumentCaptor<UserCoupon> userCouponArgumentCaptor;

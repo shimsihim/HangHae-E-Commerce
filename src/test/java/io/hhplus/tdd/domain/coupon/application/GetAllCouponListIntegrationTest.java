@@ -1,6 +1,6 @@
 package io.hhplus.tdd.domain.coupon.application;
 
-import io.hhplus.tdd.domain.BaseIntegrationTest;
+import io.hhplus.tdd.domain.IntegrationTest;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import org.junit.jupiter.api.DisplayName;
@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class GetAllCouponListIntegrationTest extends BaseIntegrationTest {
+class GetAllCouponListIntegrationTest extends IntegrationTest {
 
     @Autowired
     private GetAllCouponListUseCase getAllCouponListUseCase;

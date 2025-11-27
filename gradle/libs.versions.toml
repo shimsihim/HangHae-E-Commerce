@@ -40,6 +40,7 @@ spring_boot_starter_test = { module = "org.springframework.boot:spring-boot-star
 spring_boot_starter_validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
 spring_boot_starter_aop = { module = "org.springframework.boot:spring-boot-starter-aop" }
 spring_boot_starter_jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring_boot_starter_redisson = { module = "org.redisson:redisson-spring-boot-starter" ,version.ref = "redisson" }
 
 
 
