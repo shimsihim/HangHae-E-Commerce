@@ -42,6 +42,7 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     annotationProcessor(libs.spring.boot.configuration.processor)
     testImplementation(libs.bundles.testcontainers.mysql)
+    testImplementation("org.awaitility:awaitility:4.2.0")
     implementation("p6spy:p6spy:3.9.1")
     implementation("com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure:1.9.2")
 }
