@@ -1,5 +1,6 @@
 package io.hhplus.tdd.common.distributedLock;
 
+import io.hhplus.tdd.common.cache.RedisKey;
 import jakarta.persistence.LockTimeoutException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +18,18 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 
+/**
+ * 분산 락 AOP
+ * <p>
+ * @DistributedLock 어노테이션이 붙은 메서드에 대해 Redisson 분산 락을 자동으로 적용합니다.
+ * RedisKey.LOCK_DISTRIBUTED를 사용하여 일관된 키 프리픽스(LOCK:)를 적용합니다.
+ */
 @Aspect
 @Component
 @RequiredArgsConstructor
 @Slf4j
 @Order(0)// 트랜젝션보다 먼저 실행되도록 수정
 public class DistributedLockAop {
-    private final String REDISSON_LOCK_PREFIX  = "LOCK";
     private final RedissonClient redissonClient;
 
     @Around("@annotation(io.hhplus.tdd.common.distributedLock.DistributedLock)")
@@ -31,7 +37,12 @@ public class DistributedLockAop {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         Method method = signature.getMethod();
         DistributedLock distributedLock = method.getAnnotation(DistributedLock.class);
-        String key = REDISSON_LOCK_PREFIX + getDynamicValue(signature.getParameterNames(), joinPoint.getArgs(), distributedLock.key());
+
+        // RedisKey를 사용하여 락 키 생성 (LOCK: 프리픽스 적용)
+        String dynamicValue = String.valueOf(
+                getDynamicValue(signature.getParameterNames(), joinPoint.getArgs(), distributedLock.key())
+        );
+        String key = RedisKey.LOCK_DISTRIBUTED.getFullKey(dynamicValue);
         RLock rLock = redissonClient.getLock(key);
 
         try {
