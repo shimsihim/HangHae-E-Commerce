@@ -1,11 +1,9 @@
 package io.hhplus.tdd.domain.product.application;
 
-import io.hhplus.tdd.common.cache.CacheNames;
 import io.hhplus.tdd.domain.product.domain.model.Product;
+import io.hhplus.tdd.domain.product.domain.service.ProductService;
 import io.hhplus.tdd.domain.product.infrastructure.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +15,7 @@ import java.util.List;
 public class GetProductListUseCase {
 
     private final ProductRepository productRepository;
+    private final ProductService productService;
 
     /**
      * 상품 리스트 조회 입력 파라미터
@@ -51,25 +50,16 @@ public class GetProductListUseCase {
         }
     }
 
-    /**
-     * 상품 리스트를 페이징하여 조회
-     * 첫 번째 페이지(page=0)만 캐싱하여 성능 최적화
-     *
-     * @param input 페이지 정보
-     * @return 상품 리스트
-     */
     @Transactional(readOnly = true)
-    @Cacheable(
-            value = CacheNames.PRODUCT_LIST_ONE_PAGE,
-            key = "'page:' + #input.page() + ':size:' + #input.size()",
-            condition = "#input.page() <= 3"
-    )
     public List<Output> execute(Input input){
+        // 페이지에 해당하는 상품 ID만 먼저 조회 
         PageRequest pageRequest = PageRequest.of(input.page(), input.size());
-        Page<Product> productPage = productRepository.findAll(pageRequest);
+        List<Long> productIds = productRepository.findProductIds(pageRequest);
 
-        return productPage.getContent()
-                .stream()
+        // 캐시 우선 조회 + 미스 시 DB 조회 + 캐시 저장
+        List<Product> products = productService.getProductsByIds(productIds);
+
+        return products.stream()
                 .map(Output::from)
                 .toList();
     }

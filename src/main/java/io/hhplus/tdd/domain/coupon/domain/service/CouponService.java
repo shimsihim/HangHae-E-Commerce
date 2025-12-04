@@ -4,9 +4,12 @@ import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
 import io.hhplus.tdd.domain.coupon.exception.CouponException;
+import io.hhplus.tdd.domain.coupon.infrastructure.repository.CouponRepository;
 import io.hhplus.tdd.domain.coupon.infrastructure.repository.UserCouponRepository;
+import io.hhplus.tdd.domain.coupon.presentation.dto.req.CouponIssueReqDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,9 +18,15 @@ import java.util.List;
 public class CouponService {
 
     private final UserCouponRepository userCouponRepository;
+    private final CouponRepository couponRepository;
 
     // 쿠폰 발급 가능 여부를 검증하고 발급 처리합니다.
-    public UserCoupon issueCoupon(Coupon coupon, long userId) {
+    @Transactional
+    public UserCoupon issueCoupon(CouponIssueReqDTO couponIssueReqDTO) {
+        Long couponId = couponIssueReqDTO.couponId();
+        Long userId = couponIssueReqDTO.userId();
+
+        Coupon coupon = couponRepository.findById(couponId).orElseThrow(() -> new CouponException(ErrorCode.COUPON_NOT_FOUND));
 
         List<UserCoupon> userIssuedCoupons = userCouponRepository.findByUserIdAndCouponId(userId, coupon. getId());
         // 1. 쿠폰 발급 검증 (유효기간, 발급 가능 수량)
@@ -28,9 +37,9 @@ public class CouponService {
 
         // 3. 쿠폰 발급 수량 증가 (도메인 로직)
         coupon.increaseIssuedQuantity();
-
-        // 4. UserCoupon 생성
-        return UserCoupon.from(userId, coupon);
+        UserCoupon uc = UserCoupon.from(userId, coupon);
+        userCouponRepository.save(uc);
+        return uc;
     }
 
     /**

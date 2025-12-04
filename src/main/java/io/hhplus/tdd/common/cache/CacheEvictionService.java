@@ -26,25 +26,12 @@ public class CacheEvictionService {
     // 재고가 임계값 미만이면 해당 상품 캐시를 무효화
     public void evictIfLowStock(Long productId, Long currentStock) {
         if (currentStock < LOW_STOCK_THRESHOLD) {
-            Cache cache = cacheManager.getCache(CacheNames.PRODUCT_DETAIL);
+            Cache cache = cacheManager.getCache(RedisKey.PRODUCT_DETAIL_NAME);
             if (cache != null) {
                 String cacheKey = "id:" + productId;
                 cache.evict(cacheKey);
                 log.info("상품 상세 캐시 무효화: productId={}", productId);
             }
-        }
-    }
-
-
-    //쿠폰 재고가 0이 되면 쿠폰 목록 캐시를 무효화
-    public void evictCouponListIfSoldOut(int remainingQuantity) {
-        if (remainingQuantity <= 0) {
-            Cache cache = cacheManager.getCache(CacheNames.COUPON_LIST);
-            if (cache != null) {
-                cache.evict("all");
-                log.info("쿠폰 목록 캐시 무효화");
-            }
-            log.info("쿠폰 품절로 인한 캐시 무효화: 남은 수량={}", remainingQuantity);
         }
     }
 }

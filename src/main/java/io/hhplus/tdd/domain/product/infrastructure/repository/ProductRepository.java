@@ -2,6 +2,7 @@ package io.hhplus.tdd.domain.product.infrastructure.repository;
 
 import io.hhplus.tdd.domain.product.domain.model.Product;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -22,5 +23,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query("SELECT p FROM Product p JOIN FETCH p.options WHERE p.id = :id")
     Optional<Product> findWithOptionsById(Long id);
+
+    // id만 반환하여 캐시 조회에 활용
+    @Query("SELECT p.id FROM Product p ORDER BY p.id")
+    List<Long> findProductIds(Pageable pageable);
 
 }

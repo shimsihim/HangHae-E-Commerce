@@ -13,6 +13,7 @@ import io.hhplus.tdd.domain.point.domain.service.PointService;
 import io.hhplus.tdd.domain.point.infrastructure.repository.PointHistoryRepository;
 import io.hhplus.tdd.domain.product.domain.model.Product;
 import io.hhplus.tdd.domain.product.domain.model.ProductOption;
+import io.hhplus.tdd.domain.product.domain.service.RankingService;
 import io.hhplus.tdd.domain.product.exception.ProductException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,7 @@ public class OrderService {
     private final CouponService couponService;
     private final PointHistoryRepository pointHistoryRepository;
     private final CacheEvictionService cacheEvictionService;
+    private final RankingService rankingService;
 
     /**
      * 주문 항목 정보
@@ -73,6 +75,7 @@ public class OrderService {
     /**
      * 재고를 차감합니다 (결제 완료 시점에 호출)
      * 재고 부족 임계값(10개) 미만으로 떨어지면 캐시 무효화
+     * 판매량 랭킹 업데이트
      *
      * @param productOptions 재고 차감할 상품옵션 목록
      * @param orderItems 주문 항목 목록
@@ -90,6 +93,9 @@ public class OrderService {
                 Long currentStock = option.getQuantity();
                 Long productId = option.getProductId();
                 cacheEvictionService.evictIfLowStock(productId, currentStock);
+
+                // 판매량 랭킹 업데이트 (판매 수량만큼 점수 증가)
+                rankingService.addScore(productId, item.quantity());
             }
         }
     }
