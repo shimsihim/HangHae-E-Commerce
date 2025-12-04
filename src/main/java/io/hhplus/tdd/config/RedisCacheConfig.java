@@ -1,5 +1,6 @@
 package io.hhplus.tdd.config;
 
+import io.hhplus.tdd.common.cache.CacheNames;
 import org.redisson.api.RedissonClient;
 import org.redisson.spring.cache.CacheConfig;
 import org.redisson.spring.cache.RedissonSpringCacheManager;
@@ -13,49 +14,50 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Redis 기반 캐시 설정
- * - Spring Cache Abstraction (@Cacheable, @CacheEvict 등) 활성화
- * - 스케줄러 활성화 (캐시 워밍업 등)
- * - 각 캐시별 TTL 설정
- */
 @Configuration
 @EnableCaching
 @EnableScheduling
 public class RedisCacheConfig {
 
     /**
-     * Redisson 기반 CacheManager 구성
-     * 각 캐시 유형별로 서로 다른 TTL 설정
+     * [핵심] 캐시 설정(TTL)을 별도의 Bean으로 분리
+     * 이제 다른 서비스(MultiGetCacheService 등)에서 이 Bean을 주입받아 TTL을 알 수 있습니다.
      */
     @Bean
-    public CacheManager cacheManager(RedissonClient redissonClient) {
+    public Map<String, CacheConfig> redisCacheConfiguration() {
         Map<String, CacheConfig> config = new HashMap<>();
 
-        // 상품 리스트: 1페이지만 캐싱, TTL 5분
-        config.put("productList", new CacheConfig(
+        // 1. 상품 리스트: 10분
+        config.put(CacheNames.PRODUCT_LIST_ONE_PAGE, new CacheConfig(
                 Duration.ofMinutes(10).toMillis(),
                 Duration.ofMinutes(10).toMillis()
         ));
 
-        // 인기 상품: 전체 캐싱, TTL 24시간 (매일 12시 워밍업) , + 2분으로 캐시 재로드 사이 Cache Stampede방지
-        config.put("popularProducts", new CacheConfig(
-                Duration.ofDays(1).plusMinutes(2).toMillis(),
-                Duration.ofDays(1).plusMinutes(2).toMillis()
-        ));
-
-        // 상품 상세: 재고 10개 이상일 때만 캐싱, TTL 5분
-        config.put("productDetail", new CacheConfig(
+        // 2. 인기 상품: 10분
+        config.put(CacheNames.POPULAR_PRODUCTS_LIST, new CacheConfig(
                 Duration.ofMinutes(10).toMillis(),
                 Duration.ofMinutes(10).toMillis()
         ));
 
-        // 쿠폰 목록: TTL 3분
-        config.put("couponList", new CacheConfig(
+        // 3. 상품 상세: 10분
+        config.put(CacheNames.PRODUCT_DETAIL, new CacheConfig(
+                Duration.ofMinutes(10).toMillis(),
+                Duration.ofMinutes(10).toMillis()
+        ));
+
+        // 4. 쿠폰 목록: 20분
+        config.put(CacheNames.COUPON_LIST, new CacheConfig(
                 Duration.ofMinutes(20).toMillis(),
                 Duration.ofMinutes(20).toMillis()
         ));
 
-        return new RedissonSpringCacheManager(redissonClient, config);
+        return config;
+    }
+
+    @Bean
+    public CacheManager cacheManager(RedissonClient redissonClient,
+                                     Map<String, CacheConfig> redisCacheConfiguration) {
+        // 위에서 만든 설정 Map을 주입받아 사용
+        return new RedissonSpringCacheManager(redissonClient, redisCacheConfiguration);
     }
 }
