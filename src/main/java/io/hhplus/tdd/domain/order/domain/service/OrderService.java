@@ -5,6 +5,7 @@ import io.hhplus.tdd.common.exception.ErrorCode;
 import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
 import io.hhplus.tdd.domain.coupon.domain.service.CouponService;
+import io.hhplus.tdd.domain.order.application.OrderEventPublisher;
 import io.hhplus.tdd.domain.order.domain.model.Order;
 import io.hhplus.tdd.domain.order.exception.OrderException;
 import io.hhplus.tdd.domain.point.domain.model.PointHistory;
@@ -37,6 +38,7 @@ public class OrderService {
     private final PointHistoryRepository pointHistoryRepository;
     private final CacheEvictionService cacheEvictionService;
     private final RankingService rankingService;
+    private final OrderEventPublisher orderEventPublisher;
 
     /**
      * 주문 항목 정보
@@ -124,6 +126,7 @@ public class OrderService {
      * - 포인트 차감
      * - 쿠폰 사용
      * - 주문 상태 PAID 변경
+     * - 주문 완료 이벤트 발행
      *
      * @param order 주문 엔티티
      * @param productOptions 상품 목록
@@ -141,7 +144,11 @@ public class OrderService {
 
         // 4. 주문 완료 처리
         order.completeOrder();
+
+        // 5. 주문 완료 이벤트 발행
+        orderEventPublisher.publishOrderCompletedEvent(order);
     }
+
 
     /**
      * 포인트 차감 처리 (private 헬퍼 메서드)
