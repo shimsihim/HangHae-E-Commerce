@@ -1,0 +1,62 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092" # <--- 윈도우 접속용 (안전한 포트)
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      # EXTERNAL 리스너를 29092 포트로 변경
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,EXTERNAL://0.0.0.0:29092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      # ★★★ [에러 해결 치트키] ★★★
+      # 브로커가 1대니까 복제본도 1개만 만들라고 강제하는 설정
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local-kafka
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    depends_on:
+      - kafka
+
+
+# 볼륨 삭제
+# docker-compose down -v
+
+# docker-compose up -d
+
+
+# my-test 토픽의 이전 메시지도 전부 줘
+# docker exec -it kafka kafka-console-consumer --topic my-test --bootstrap-server kafka:9092 --from-beginning
+
+#  my-test 토픽 생성
+# docker exec -it kafka kafka-topics --create --topic my-test --bootstrap-server kafka:9092
+
+# my-test 의 토픽의 메시지 생성
+# docker exec -it kafka kafka-console-producer --topic my-test --bootstrap-server kafka:9092
+
+# my-test 의 토픽의 메시지 구독
+# docker exec -it kafka kafka-console-consumer --topic my-test --bootstrap-server kafka:9092
