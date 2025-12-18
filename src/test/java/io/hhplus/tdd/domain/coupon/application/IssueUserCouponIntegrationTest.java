@@ -5,6 +5,7 @@ import io.hhplus.tdd.domain.coupon.domain.model.Coupon;
 import io.hhplus.tdd.domain.coupon.domain.model.DiscountType;
 import io.hhplus.tdd.domain.coupon.domain.model.Status;
 import io.hhplus.tdd.domain.coupon.domain.model.UserCoupon;
+import io.hhplus.tdd.domain.coupon.domain.service.CouponService;
 import io.hhplus.tdd.domain.coupon.infrastructure.repository.CouponRepository;
 import io.hhplus.tdd.domain.coupon.infrastructure.repository.UserCouponRepository;
 import io.hhplus.tdd.domain.coupon.presentation.dto.req.CouponIssueReqDTO;
@@ -38,6 +39,9 @@ class IssueUserCouponIntegrationTest extends IntegrationTest {
 
     @Autowired
     private UserCouponRepository userCouponRepository;
+
+    @Autowired
+    private CouponService couponService;
 
     // Consumer는 백그라운드에서 돌고 있으므로 주입만 받아두거나(필요시),
     // 실제 로직 호출은 하지 않습니다.

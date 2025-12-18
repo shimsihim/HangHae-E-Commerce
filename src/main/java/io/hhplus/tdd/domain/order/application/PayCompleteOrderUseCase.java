@@ -38,6 +38,7 @@ public class PayCompleteOrderUseCase {
     private final ProductOptionRepository productOptionRepository;
     private final MultiDistributedLockExecutor lockExecutor;
     private final TransactionTemplate transactionTemplate;
+    private final OrderEventPublisher orderEventPublisher;
 
     public record Input(
             long orderId
@@ -69,9 +70,10 @@ public class PayCompleteOrderUseCase {
 
         // 6. 다중 분산 락을 획득하고 결제 완료 처리 실행
         lockExecutor.executeWithLocks(lockKeys, () -> {
-            // 트랜잭션 내에서 결제 완료 처리 실행
-            transactionTemplate.executeWithoutResult(status -> {
+            // 트랜잭션 내에서 결제 완료 처리 및 이벤트 발행
+            transactionTemplate.execute(status -> {
                 executePaymentLogic(order, orderItems, optionIds);
+                return null;
             });
         });
     }
@@ -99,6 +101,9 @@ public class PayCompleteOrderUseCase {
 
         // 5. 결제 완료 처리 (재고 차감, 포인트 차감, 쿠폰 사용, 상태 변경)
         orderService.completeOrderWithPayment(order, productOptions, orderItemInfos);
+
+        // 6. 이벤트 발행 (트랜잭션 커밋 전/후 리스너에서 Outbox 저장 및 Kafka 발행)
+        orderEventPublisher.publishOrderCompletedEvent(order);
     }
 
     //분산 락 키 리스트 생성

@@ -62,6 +62,9 @@ class PayCompleteOrderUseCaseTest {
     @Mock
     TransactionTemplate transactionTemplate;
 
+    @Mock
+    OrderEventPublisher orderEventPublisher;
+
     @Nested
     class 결제_완료_처리_성공 {
 
@@ -125,12 +128,11 @@ class PayCompleteOrderUseCaseTest {
                 return null;
             }).given(lockExecutor).executeWithLocks(anyList(), any(Runnable.class));
 
-            // Mock 설정: transactionTemplate은 전달된 콜백을 바로 실행
+            // Mock 설정: transactionTemplate은 전달된 콜백을 바로 실행하고 Order를 반환
             willAnswer(invocation -> {
-                Consumer<?> callback = invocation.getArgument(0);
-                callback.accept(null);
-                return null;
-            }).given(transactionTemplate).executeWithoutResult(any());
+                org.springframework.transaction.support.TransactionCallback<?> callback = invocation.getArgument(0);
+                return callback.doInTransaction(null);
+            }).given(transactionTemplate).execute(any());
 
             given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
             given(orderItemRepository.findByOrderId(orderId)).willReturn(Arrays.asList(orderItem));
@@ -147,6 +149,7 @@ class PayCompleteOrderUseCaseTest {
             verify(orderItemRepository).findByOrderId(orderId);
             verify(productOptionRepository).findAllByIdInForUpdate(anyList());
             verify(orderService).completeOrderWithPayment(any(Order.class), anyList(), anyList());
+            verify(orderEventPublisher).publishOrderCompletedEvent(any(Order.class));
         }
     }
 
