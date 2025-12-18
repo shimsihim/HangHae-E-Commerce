@@ -31,6 +31,9 @@ dependencies {
     implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework.boot:spring-boot-starter-cache")
 
+    // Kafka
+    implementation("org.springframework.kafka:spring-kafka")
+
     // Swagger/OpenAPI Documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 
@@ -42,6 +45,7 @@ dependencies {
     testAnnotationProcessor("org.projectlombok:lombok")
     annotationProcessor(libs.spring.boot.configuration.processor)
     testImplementation(libs.bundles.testcontainers.mysql)
+    testImplementation(libs.test.containers.kafka)
     testImplementation("org.awaitility:awaitility:4.2.0")
     implementation("p6spy:p6spy:3.9.1")
     implementation("com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure:1.9.2")

@@ -4,6 +4,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
@@ -23,11 +24,16 @@ public abstract class ContainerIntegrationTest {
             .withExposedPorts(6379)
             .withReuse(true);
 
+    private static final KafkaContainer KAFKA_CONTAINER = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1"))
+            .withReuse(true);
+
+
     // 2. 컨테이너 시작 (static 블록을 통해 최초 1회만 실행됨 -> 싱글톤 효과)
     static {
         MYSQL_CONTAINER.start();
         REDIS_CONTAINER.start();
-        // 종료는 Testcontainers(Ryuk)가 JVM 종료 시 알아서 처리하므로 stop() 호출 불필요
+        KAFKA_CONTAINER.start();
+        // 종료는 Testcontainers(Ryuk)가 JVM 종료 시 알아서 처리하므로 stop() 호출 불필터
     }
 
     // 3. 동적 프로퍼티 설정
@@ -41,6 +47,11 @@ public abstract class ContainerIntegrationTest {
         // Redis
         registry.add("spring.data.redis.host", REDIS_CONTAINER::getHost);
         registry.add("spring.data.redis.port", REDIS_CONTAINER::getFirstMappedPort);
+
+        // Kafka
+        registry.add("spring.kafka.bootstrap-servers", KAFKA_CONTAINER::getBootstrapServers);
+        registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
+
 
         // HikariCP 안정성 설정
         registry.add("spring.datasource.hikari.max-lifetime", () -> "1800000");

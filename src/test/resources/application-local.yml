@@ -25,6 +25,12 @@ spring:
   cache:
     type: redis
 
+  # 로컬 Kafka 설정 (Docker-compose 사용)
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+
 decorator:
   datasource:
     p6spy:

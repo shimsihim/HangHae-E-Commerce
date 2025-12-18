@@ -11,7 +11,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-        show-sql: true
 #        format_sql:   # p6spy 사용으로 인한 제거
         # 영속성 컨텍스트 초기화 시점에 테이블 스키마를 어떻게 처리할지 설정
         # create: 기존 테이블 삭제 후 재생성 (개발 단계에서만 사용)
@@ -28,6 +27,10 @@ spring:
   cache:
     type: redis
 
+  # Kafka 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+
 decorator:
   datasource:
     p6spy:
@@ -35,4 +38,5 @@ decorator:
 
 logging:
   level:
-    root: DEBUG
+    root: INFO
+    io.hhplus.tdd: DEBUG
