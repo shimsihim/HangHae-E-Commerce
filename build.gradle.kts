@@ -31,6 +31,9 @@ dependencies {
     implementation("org.springframework.retry:spring-retry")
     implementation("org.springframework.boot:spring-boot-starter-cache")
 
+    // Kafka
+    implementation("org.springframework.kafka:spring-kafka")
+
     // Swagger/OpenAPI Documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
 

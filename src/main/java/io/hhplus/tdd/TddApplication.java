@@ -7,12 +7,13 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
-@EnableJpaAuditing
-@EnableRetry
-@EnableAsync
+@EnableJpaAuditing  // JPA Auditing (CreatedBaseEntity, UpdatableBaseEntity)
+@EnableRetry        // @Retryable 지원 (낙관적 락 재시도)
+@EnableAsync        // @Async 지원 (비동기 처리)
 public class TddApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(TddApplication.class, args);
     }
 }
+

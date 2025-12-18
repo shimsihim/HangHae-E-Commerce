@@ -28,6 +28,10 @@ spring:
   cache:
     type: redis
 
+  # Kafka 설정
+  kafka:
+    bootstrap-servers: localhost:9092
+
 decorator:
   datasource:
     p6spy:
