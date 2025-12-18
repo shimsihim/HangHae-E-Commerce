@@ -42,6 +42,7 @@ public class CreateOrderUseCase {
 
     private final CouponService couponService;
     private final OrderService orderService;
+    private final OrderEventPublisher orderEventPublisher;
 
 
     public record Input(
@@ -110,11 +111,12 @@ public class CreateOrderUseCase {
             discountAmount = couponService.validateCouponUsage(userCoupon.getCoupon(), userCoupon, totalAmount);
         }
 
-        // 4. 주문 객체 생성 (아직 저장은 안 함)
+        // 4. 주문 객체 생성 및 저장
         Order newOrder = Order.createOrder(userPoint, userCoupon, totalAmount, discountAmount, input.usePointAmount());
+        Order savedOrder = orderRepository.save(newOrder);
 
         // 5. 0원 결제 처리 (즉시 완료)
-        if (newOrder.getFinalAmount() == 0) {
+        if (savedOrder.getFinalAmount() == 0) {
             // JPA 1차 캐시 문제 해결: 이전에 조회한 ProductOption을 영속성 컨텍스트에서 제거
             productOptions.forEach(entityManager::detach);
 
@@ -124,18 +126,20 @@ public class CreateOrderUseCase {
             List<ProductOption> productsOptionsWithLock = productOptionRepository.findAllByIdInForUpdate(optionIds);
 
             // 재고 차감, 포인트 차감, 쿠폰 사용 처리 (락이 걸린 엔티티 사용)
-            orderService.completeOrderWithPayment(newOrder, productsOptionsWithLock, orderItemsInfo);
+            orderService.completeOrderWithPayment(savedOrder, productsOptionsWithLock, orderItemsInfo);
 
             // OrderItem 생성 시 사용할 수 있도록 락이 걸린 엔티티로 교체
             productOptions = productsOptionsWithLock;
         }
 
-        // 6. 주문 저장
-        Order savedOrder = orderRepository.save(newOrder);
-
-        // 7. 주문 항목(OrderItem) 생성 및 저장
+        // 6. 주문 항목(OrderItem) 생성 및 저장
         List<OrderItem> orderItemEntities = createOrderItems(savedOrder, productOptions, orderItemsInfo);
         orderItemRepository.saveAll(orderItemEntities);
+
+        // 7. 0원 결제 완료 시 이벤트 발행 (트랜잭션 커밋 후 Kafka로 전송)
+        if (savedOrder.getFinalAmount() == 0) {
+            orderEventPublisher.publishOrderCompletedEvent(savedOrder);
+        }
 
         return Output.from(savedOrder);
     }

@@ -69,6 +69,9 @@ class CreateOrderUseCaseTest {
     @Mock
     EntityManager entityManager;
 
+    @Mock
+    OrderEventPublisher orderEventPublisher;
+
     @Nested
     class 주문_생성_성공 {
 

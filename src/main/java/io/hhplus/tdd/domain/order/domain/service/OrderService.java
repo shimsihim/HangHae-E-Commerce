@@ -38,7 +38,6 @@ public class OrderService {
     private final PointHistoryRepository pointHistoryRepository;
     private final CacheEvictionService cacheEvictionService;
     private final RankingService rankingService;
-    private final OrderEventPublisher orderEventPublisher;
 
     /**
      * 주문 항목 정보
@@ -126,7 +125,8 @@ public class OrderService {
      * - 포인트 차감
      * - 쿠폰 사용
      * - 주문 상태 PAID 변경
-     * - 주문 완료 이벤트 발행
+     *
+     * 주의: 이벤트 발행은 UseCase에서 처리 (트랜잭션 경계 분리)
      *
      * @param order 주문 엔티티
      * @param productOptions 상품 목록
@@ -144,9 +144,6 @@ public class OrderService {
 
         // 4. 주문 완료 처리
         order.completeOrder();
-
-        // 5. 주문 완료 이벤트 발행
-        orderEventPublisher.publishOrderCompletedEvent(order);
     }
 
 
