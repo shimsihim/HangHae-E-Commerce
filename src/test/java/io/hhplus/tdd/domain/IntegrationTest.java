@@ -20,7 +20,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
  * - Testcontainers 사용: extends BaseIntegrationTest
  * - 로컬 인프라 사용: extends LocalIntegrationTest
  */
-public abstract class IntegrationTest extends LocalIntegrationTest {
+public abstract class IntegrationTest extends ContainerIntegrationTest {
 
     @SpyBean
     protected CouponIssueConsumer couponIssueConsumer;

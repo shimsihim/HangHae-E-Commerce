@@ -1,43 +1,82 @@
 spring:
   application.name: hhplus-e-commerce
 
+  # ==========================================
+  # Database Configuration (환경변수 우선)
+  # ==========================================
+  # 환경변수가 없으면 로컬 개발 기본값 사용
+  # 예: DB_HOST=mysql, DB_PORT=3306, DB_NAME=commerce
   datasource:
-    url: jdbc:mysql://localhost:3306/commerce?serverTimezone=UTC&characterEncoding=UTF-8
-    username: root
-    password: admin
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:commerce}?serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:admin}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-#        format_sql:   # p6spy 사용으로 인한 제거
-        # 영속성 컨텍스트 초기화 시점에 테이블 스키마를 어떻게 처리할지 설정
-        # create: 기존 테이블 삭제 후 재생성 (개발 단계에서만 사용)
-        # update: 변경된 부분만 반영 (개발/테스트 단계)
-        # validate: 엔티티와 DB 스키마를 비교하고 다르면 경고/오류 발생 (운영 단계 권장)
-        # none: 아무것도 하지 않음 (운영 단계 권장)
+        # ==========================================
+        # DDL 자동 생성 모드 (환경변수로 제어)
+        # ==========================================
+        # 로컬: validate (schema.sql 사용)
+        # 개발: validate
+        # 운영: validate 또는 none
         hbm2ddl:
-          auto: create
+          auto: ${JPA_DDL_AUTO:validate}
     jpa-auditing:
       enabled: true
+
+  # ==========================================
+  # Redis Configuration (환경변수 우선)
+  # ==========================================
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
   cache:
     type: redis
 
-  # Kafka 설정
+  # ==========================================
+  # Kafka Configuration (환경변수 우선)
+  # ==========================================
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
+# ==========================================
+# P6Spy SQL Logging
+# ==========================================
 decorator:
   datasource:
     p6spy:
-      enable-logging: true
+      enable-logging: ${P6SPY_ENABLE:true}
 
+# ==========================================
+# Logging Configuration
+# ==========================================
 logging:
   level:
-    root: INFO
-    io.hhplus.tdd: DEBUG
+    root: ${LOG_LEVEL_ROOT:INFO}
+    io.hhplus.tdd: ${LOG_LEVEL_APP:DEBUG}
+
+# ==========================================
+# 환경별 설정 방법
+# ==========================================
+# 1. 로컬 개발 (기본값):
+#    - 환경변수 없이 실행하면 localhost 사용
+#    - ./gradlew bootRun
+#
+# 2. Docker Compose 환경:
+#    - DB_HOST=mysql
+#    - REDIS_HOST=redis
+#    - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+#    - JPA_DDL_AUTO=validate
+#
+# 3. 개발/운영 환경:
+#    - 시스템 환경변수로 설정
+#    - 예: export DB_URL=jdbc:mysql://prod-db:3306/commerce
+#    - 또는 JAR 실행 시: java -jar app.jar --DB_HOST=prod-db
+#
+# 4. Spring Profile 사용:
+#    - application-dev.yml, application-prod.yml 생성
+#    - --spring.profiles.active=dev 로 실행
