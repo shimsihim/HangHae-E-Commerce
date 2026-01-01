@@ -18,7 +18,8 @@ public abstract class ContainerIntegrationTest {
             .withUsername("test")
             .withPassword("test")
             .withReuse(true) // 로컬 개발 시 컨테이너 재사용 (Testcontainers 설정 필요)
-            .waitingFor(Wait.forLogMessage(".*ready for connections.*\\n", 1));
+            .waitingFor(Wait.forLogMessage(".*ready for connections.*\\n", 1))
+            .withInitScript("schema.sql");
 
     private static final GenericContainer<?> REDIS_CONTAINER = new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
             .withExposedPorts(6379)
@@ -51,7 +52,6 @@ public abstract class ContainerIntegrationTest {
         // Kafka
         registry.add("spring.kafka.bootstrap-servers", KAFKA_CONTAINER::getBootstrapServers);
         registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
-
 
         // HikariCP 안정성 설정
         registry.add("spring.datasource.hikari.max-lifetime", () -> "1800000");

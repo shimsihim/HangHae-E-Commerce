@@ -40,11 +40,11 @@ class GetProductListUseCaseIntegrationTest extends ContainerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        Product product1 = Product.builder().name("테스트 상품 1").basePrice(10000L).build();
-        Product product2 = Product.builder().name("테스트 상품 2").basePrice(20000L).build();
-        Product product3 = Product.builder().name("테스트 상품 3").basePrice(30000L).build();
-        Product product4 = Product.builder().name("테스트 상품 4").basePrice(40000L).build();
-        Product product5 = Product.builder().name("테스트 상품 5").basePrice(50000L).build();
+        Product product1 = Product.builder().name("testproduct1").basePrice(10000L).build();
+        Product product2 = Product.builder().name("testproduct2").basePrice(20000L).build();
+        Product product3 = Product.builder().name("testproduct3").basePrice(30000L).build();
+        Product product4 = Product.builder().name("testproduct4").basePrice(40000L).build();
+        Product product5 = Product.builder().name("testproduct5").basePrice(50000L).build();
 
         List<Product> savedProducts = productRepository.saveAll(List.of(product1, product2, product3, product4, product5));
         productIds = savedProducts.stream().map(Product::getId).toList();
@@ -102,13 +102,13 @@ class GetProductListUseCaseIntegrationTest extends ContainerIntegrationTest {
 
         // then
         assertThat(firstPageResult).hasSize(3);
-        assertThat(firstPageResult.get(0).name()).isEqualTo("테스트 상품 1");
-        assertThat(firstPageResult.get(1).name()).isEqualTo("테스트 상품 2");
-        assertThat(firstPageResult.get(2).name()).isEqualTo("테스트 상품 3");
+        assertThat(firstPageResult.get(0).name()).isEqualTo("testproduct1");
+        assertThat(firstPageResult.get(1).name()).isEqualTo("testproduct2");
+        assertThat(firstPageResult.get(2).name()).isEqualTo("testproduct3");
 
         assertThat(secondPageResult).hasSize(2);
-        assertThat(secondPageResult.get(0).name()).isEqualTo("테스트 상품 4");
-        assertThat(secondPageResult.get(1).name()).isEqualTo("테스트 상품 5");
+        assertThat(secondPageResult.get(0).name()).isEqualTo("testproduct4");
+        assertThat(secondPageResult.get(1).name()).isEqualTo("testproduct5");
     }
 
     @Test
@@ -126,16 +126,16 @@ class GetProductListUseCaseIntegrationTest extends ContainerIntegrationTest {
 
         // then
         assertThat(firstPage).hasSize(2);
-        assertThat(firstPage.get(0).name()).isEqualTo("테스트 상품 1");
-        assertThat(firstPage.get(1).name()).isEqualTo("테스트 상품 2");
+        assertThat(firstPage.get(0).name()).isEqualTo("testproduct1");
+        assertThat(firstPage.get(1).name()).isEqualTo("testproduct2");
 
         assertThat(secondPage).hasSize(2);
-        assertThat(secondPage.get(0).name()).isEqualTo("테스트 상품 3");
-        assertThat(secondPage.get(1).name()).isEqualTo("테스트 상품 4");
+        assertThat(secondPage.get(0).name()).isEqualTo("testproduct3");
+        assertThat(secondPage.get(1).name()).isEqualTo("testproduct4");
 
         // 캐시에서 조회한 결과도 동일해야 함
         assertThat(firstPageAgain).hasSize(2);
-        assertThat(firstPageAgain.get(0).name()).isEqualTo("테스트 상품 1");
-        assertThat(firstPageAgain.get(1).name()).isEqualTo("테스트 상품 2");
+        assertThat(firstPageAgain.get(0).name()).isEqualTo("testproduct1");
+        assertThat(firstPageAgain.get(1).name()).isEqualTo("testproduct2");
     }
 }
