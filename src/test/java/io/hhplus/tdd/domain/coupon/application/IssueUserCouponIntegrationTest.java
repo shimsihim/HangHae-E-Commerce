@@ -23,8 +23,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 @SpringBootTest
 @Testcontainers
@@ -54,28 +57,29 @@ class IssueUserCouponIntegrationTest extends IntegrationTest {
 
     @Test
     @DisplayName("쿠폰 발급 통합 테스트 - 큐를 통해 정상적으로 발급된다")
-    void 쿠폰_발급_성공() throws InterruptedException {
+    void 쿠폰_발급_성공() { // InterruptedException 불필요
         // given
-        Coupon coupon = createCoupon(100, 0); // 수량 100개
+        Coupon coupon = createCoupon(100, 0);
         Coupon savedCoupon = couponRepository.save(coupon);
         long userId = 1L;
 
         // when
-        // 1. UseCase 실행 -> Redis 큐에 적재
         issueUserCouponUseCase.execute(new IssueUserCouponUseCase.Input(savedCoupon.getId(), userId));
 
-        // 2. 비동기 처리가 완료될 때까지 대기 (최대 2초)
-        waitForCouponIssue(userId, savedCoupon.getId());
-
         // then
-        List<UserCoupon> userCoupons = userCouponRepository.findByUserIdAndCouponId(userId, savedCoupon.getId());
-        assertThat(userCoupons).hasSize(1);
+        await()
+                .atMost(2, SECONDS)
+                .pollInterval(300, MILLISECONDS)
+                .untilAsserted(() -> {
+                    List<UserCoupon> userCoupons = userCouponRepository.findByUserIdAndCouponId(userId, savedCoupon.getId());
+                    assertThat(userCoupons).hasSize(1);
 
-        UserCoupon issuedCoupon = userCoupons.get(0);
-        assertThat(issuedCoupon.getStatus()).isEqualTo(Status.ISSUED);
+                    UserCoupon issuedCoupon = userCoupons.get(0);
+                    assertThat(issuedCoupon.getStatus()).isEqualTo(Status.ISSUED);
 
-        Coupon updatedCoupon = couponRepository.findById(savedCoupon.getId()).orElseThrow();
-        assertThat(updatedCoupon.getIssuedQuantity()).isEqualTo(1);
+                    Coupon updatedCoupon = couponRepository.findById(savedCoupon.getId()).orElseThrow();
+                    assertThat(updatedCoupon.getIssuedQuantity()).isEqualTo(1);
+                });
     }
 
     @Test
@@ -147,22 +151,15 @@ class IssueUserCouponIntegrationTest extends IntegrationTest {
         latch.await(); // 요청 전송 완료 대기
 
         // then
-        // Consumer가 큐를 하나씩 처리하는 시간을 기다림 (Polling)
-        // 최대 10초 대기, 수량이 20개가 되면 즉시 탈출
-        int maxWaitTime = 10;
-        int currentCount = 0;
-
-        for (int i = 0; i < maxWaitTime * 10; i++) {
-            Coupon c = couponRepository.findById(savedCoupon.getId()).orElseThrow();
-            if (c.getIssuedQuantity() == threadCount) {
-                currentCount = c.getIssuedQuantity();
-                break;
-            }
-            Thread.sleep(100); // 0.1초 대기
-        }
-
-        Coupon updatedCoupon = couponRepository.findById(savedCoupon.getId()).orElseThrow();
-        assertThat(updatedCoupon.getIssuedQuantity()).isEqualTo(threadCount);
+// then : Awaitility 사용
+        // "최대 10초 동안, 100ms 간격으로 확인해라. 만약 조건이 맞으면 즉시 통과, 10초 지나면 에러."
+        await()
+                .atMost(10, SECONDS)
+                .pollInterval(100, MILLISECONDS)
+                .untilAsserted(() -> {
+                    Coupon c = couponRepository.findById(savedCoupon.getId()).orElseThrow();
+                    assertThat(c.getIssuedQuantity()).isEqualTo(threadCount);
+                });
     }
 
     // --- Helper Methods ---
@@ -180,16 +177,5 @@ class IssueUserCouponIntegrationTest extends IntegrationTest {
                 .validFrom(LocalDate.now().minusDays(1))
                 .validUntil(LocalDate.now().plusDays(30))
                 .build();
-    }
-
-    // DB에 데이터가 들어왔는지 확인하는 간단한 Polling 메서드
-    private void waitForCouponIssue(long userId, long couponId) throws InterruptedException {
-        for (int i = 0; i < 20; i++) { // 최대 2초 (100ms * 20)
-            List<UserCoupon> list = userCouponRepository.findByUserIdAndCouponId(userId, couponId);
-            if (!list.isEmpty()) {
-                return; // 데이터 발견 시 즉시 리턴
-            }
-            Thread.sleep(100);
-        }
     }
 }
