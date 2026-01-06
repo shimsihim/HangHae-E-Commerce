@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: hhplus-e-commerce
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/commerce?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: admin
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        show-sql: true
+        hbm2ddl:
+          auto: create
+    jpa-auditing:
+      enabled: true
+
+  # 로컬 Redis 설정 (직접 설치된 Redis 사용)
+  redis:
+    host: 127.0.0.1
+    port: 6379
+  cache:
+    type: redis
+
+  # 로컬 Kafka 설정 (Docker-compose 사용)
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      auto-offset-reset: earliest
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
+logging:
+  level:
+    io.hhplus.tdd: INFO

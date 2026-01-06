@@ -1,0 +1,82 @@
+spring:
+  application.name: hhplus-e-commerce
+
+  # ==========================================
+  # Database Configuration (환경변수 우선)
+  # ==========================================
+  # 환경변수가 없으면 로컬 개발 기본값 사용
+  # 예: DB_HOST=mysql, DB_PORT=3306, DB_NAME=commerce
+  datasource:
+    url: ${DB_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:commerce}?serverTimezone=UTC&characterEncoding=UTF-8}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        # ==========================================
+        # DDL 자동 생성 모드 (환경변수로 제어)
+        # ==========================================
+        # 로컬: validate (schema.sql 사용)
+        # 개발: validate
+        # 운영: validate 또는 none
+        hbm2ddl:
+          auto: ${JPA_DDL_AUTO:validate}
+    jpa-auditing:
+      enabled: true
+
+  # ==========================================
+  # Redis Configuration (환경변수 우선)
+  # ==========================================
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+  cache:
+    type: redis
+
+  # ==========================================
+  # Kafka Configuration (환경변수 우선)
+  # ==========================================
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+# ==========================================
+# P6Spy SQL Logging
+# ==========================================
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: ${P6SPY_ENABLE:true}
+
+# ==========================================
+# Logging Configuration
+# ==========================================
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    io.hhplus.tdd: ${LOG_LEVEL_APP:DEBUG}
+
+# ==========================================
+# 환경별 설정 방법
+# ==========================================
+# 1. 로컬 개발 (기본값):
+#    - 환경변수 없이 실행하면 localhost 사용
+#    - ./gradlew bootRun
+#
+# 2. Docker Compose 환경:
+#    - DB_HOST=mysql
+#    - REDIS_HOST=redis
+#    - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+#    - JPA_DDL_AUTO=validate
+#
+# 3. 개발/운영 환경:
+#    - 시스템 환경변수로 설정
+#    - 예: export DB_URL=jdbc:mysql://prod-db:3306/commerce
+#    - 또는 JAR 실행 시: java -jar app.jar --DB_HOST=prod-db
+#
+# 4. Spring Profile 사용:
+#    - application-dev.yml, application-prod.yml 생성
+#    - --spring.profiles.active=dev 로 실행

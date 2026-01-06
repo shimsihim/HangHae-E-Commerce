@@ -1,0 +1,31 @@
+package io.hhplus.tdd.domain.product.domain.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+@Builder
+public class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToMany(mappedBy = "product" , fetch = FetchType.LAZY)
+    private List<ProductOption> options = new ArrayList<>();
+
+    @Column(nullable = false)
+    private String name;
+
+    private String description;
+
+    @Column(nullable = false)
+    private Long basePrice;
+
+}

@@ -1,0 +1,20 @@
+spring:
+  application.name: hhplus-e-commerce
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        show-sql: true
+        hbm2ddl:
+          auto: none
+    jpa-auditing:
+      enabled: true
+
+  cache:
+    type: redis
+
+decorator:
+  datasource:
+    p6spy:
+      enable-logging: true
