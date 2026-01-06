@@ -1,6 +1,7 @@
 package io.hhplus.tdd.common.exception;
 
 import io.hhplus.tdd.common.response.ApiResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.ErrorResponse;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@Slf4j
 class ApiControllerAdvice {
 
 
@@ -26,6 +28,7 @@ class ApiControllerAdvice {
 
         // 응답 객체에 List를 담거나, List를 하나의 문자열로 결합하여 전달
         String combinedMessage = String.join(" | ", errorMessages);
+        log.error("request validation error",e);
 
         return ApiResponse.error(combinedMessage , ErrorCode.USER_POINT_CHARGE_MIN_AMOUNT.getErrMsg());
     }
@@ -56,6 +59,7 @@ class ApiControllerAdvice {
 //
     @ExceptionHandler(value = Exception.class)
     public ApiResponse handleException(Exception e) {
+        log.error("error",e);
         return ApiResponse.error("에러가 발생했습니다", "500.");
     }
 }
